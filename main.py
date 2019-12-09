@@ -12,6 +12,9 @@ char_width = 18
 char_height = 24
 char_count = int((width) / char_width)
 pixel_block_size = 3
+
+chars_blocks = []
+
 chars = [
     ' ',
     '!',
@@ -109,7 +112,6 @@ chars = [
     '}',
     '~'
 ]
-chars_blocks = []
 
 for char_num in range(char_count):
     char_size = (18, 24)
@@ -131,4 +133,11 @@ for char_num in range(char_count):
 
     char_img.save('output-chars/' + ' ' + str(char_num) + '-' + str(char_colored_blocks) + '.png')
 
+
+chars_blocks_sorted = chars_blocks.copy()
+chars_blocks_sorted.sort(key = lambda x: x[1])
+
+print("\nchars_blocks: ")
 print(chars_blocks)
+print("\nchars_blocks_sorted: ")
+print(chars_blocks_sorted)
