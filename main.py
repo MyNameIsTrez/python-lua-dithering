@@ -12,7 +12,104 @@ char_width = 18
 char_height = 24
 char_count = int((width) / char_width)
 pixel_block_size = 3
-chars_colored_blocks = []
+chars = [
+    ' ',
+    '!',
+    '"',
+    '#',
+    '$',
+    '%',
+    '&',
+    "'",
+    '(',
+    ')',
+    '*',
+    '+',
+    ',',
+    '-',
+    '.',
+    '/',
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    ':',
+    ';',
+    '<',
+    '=',
+    '>',
+    '?',
+    '@',
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    '[',
+    '\\',
+    ']',
+    '^',
+    '_',
+    '?',
+    'a',
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm',
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
+    '{',
+    '|',
+    '}',
+    '~'
+]
+chars_blocks = []
 
 for char_num in range(char_count):
     char_size = (18, 24)
@@ -28,8 +125,10 @@ for char_num in range(char_count):
             for bx in range (pixel_block_size):
                 for by in range (pixel_block_size):
                     char_pix[x * pixel_block_size + bx, y * pixel_block_size + by] = pixel_block_rgb
+    
+    char = chars[char_num]
+    chars_blocks.append([char, char_colored_blocks])
 
-    chars_colored_blocks.append(char_colored_blocks)
-    char_img.save('output-chars/' + str(char_num) + '-' + str(char_colored_blocks) + '.png')
+    char_img.save('output-chars/' + ' ' + str(char_num) + '-' + str(char_colored_blocks) + '.png')
 
-print(chars_colored_blocks)
+print(chars_blocks)
