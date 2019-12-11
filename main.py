@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+from PIL import GifImagePlugin
 
 def print_char_blocks():
     chars_img = Image.open('chars.png')
@@ -8,7 +9,7 @@ def print_char_blocks():
     width, height = chars_img.size  # Get the width and hight of the image for iterating over
 
     char_width = 18
-    char_height = 24
+    char_height = 27
     char_count = int((width) / char_width)
     pixel_block_size = 3
 
@@ -143,4 +144,33 @@ def print_char_blocks():
     print("\nchar_blocks_sorted_dict: ")
     print(char_blocks_sorted_dict)
 
+def save_brightness(name, fileType):
+    if fileType == "jpeg":
+        img = Image.open(name + "." + fileType)
+        pix = img.load()
+
+        width, height = img.size  # Get the width and hight of the image for iterating over
+
+        result = [] # becomes a 2d list holding all brightness values
+        for x in range(width):
+            result.append([])
+            for y in range(height):
+                r, g, b = pix[x, y]
+                brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+                brightness = round(brightness*1000)/1000
+                result[x].append(brightness)
+
+        # print(result)
+        result_file = open(name + ".txt", "w")
+        string = str(result)
+        string = string.replace("[", "{")
+        string = string.replace("]", "}")
+        result_file.write(string)
+        result_file.close()
+    elif fileType == "gif":
+        imageObject = Image.open(name + "." + img)
+
+
 # print_char_blocks()
+save_brightness("dogs 1 - 226x85", "jpeg")
+# save_brightness("dogs 1 - 226x85", "gif")
