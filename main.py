@@ -175,6 +175,7 @@ def getPixels(name):
             while 1:
                 # sometimes helps, other times it does not
                 # im.putpalette(mypalette)
+
                 new_im = Image.new("RGBA", im.size)
                 new_im.paste(im)
                 # new_im.save('police/'+str(i)+'.png')
@@ -188,32 +189,42 @@ def getPixels(name):
     elif extension == "jpeg":
         return [Image.open(infile)]
 
-def get_brightness(tup):
-    return (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
+def get_brightness(tup, x, y):
+    if x == 0 and y == 0:
+        print(tup)
+
+    brightness = (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
+    if len(tup) == 4:
+        return brightness * tup[3] / 255
+    else:
+        return 0
 
 def save_brightness(fullname, imgs):
-    prev_result = []
+    prev_frame = []
     frames = []
 
+    width, height = imgs[0].size  # Get the width and hight of the PILImage for iterating over
+    print("width: " + str(width) + ", " + "height: " + str(height))
+
+    print("len(imgs): " + str(len(imgs)))
     for i in range(len(imgs)):
         img = imgs[i]
 
         pix = img.load()
 
-        width, height = img.size  # Get the width and hight of the PILImage for iterating over
-
         frame = [] # becomes a 2d list holding all brightness values
         for x in range(width):
             frame.append([])
             for y in range(height):
-                brightness = get_brightness(pix[x, y])
+                brightness = get_brightness(pix[x, y], x, y)
+                # brightness = int(brightness > 0.5)
                 brightness = round(brightness*100)/100
                 if i > 0:
-                    diff = brightness - prev_result[x][y]
+                    diff = brightness - prev_frame[x][y]
                     frame[x].append(brightness if diff else -1)
                 else:
                     frame[x].append(brightness)
-        prev_result = frame
+        prev_frame = frame
         frames.append(frame)
     
     name = fullname.split(".",1)[0] # get the name before the "."
@@ -223,7 +234,8 @@ def save_brightness(fullname, imgs):
     string = string.replace("[", "{")
     string = string.replace("]", "}")
     string = string.replace(" ", "")
-    string = string.replace("1.0", "1") # don't know why 1.0 even occurs, 0 or 0.0 doesn't occur for some reason though
+    string = string.replace("0.0", "0") # don't know why 0.0 even occurs
+    string = string.replace("1.0", "1") # don't know why 1.0 even occurs
 
     if compression:
         a = zlib.compress(string.encode("utf-8"))
