@@ -209,21 +209,7 @@ def save_brightness(fullname, imgs):
     print("len(imgs): " + str(len(imgs)))
     for i in range(len(imgs)):
         img = imgs[i]
-
-        pix = img.load()
-
-        frame = [] # becomes a 2d list holding all brightness values
-        for x in range(width):
-            frame.append([])
-            for y in range(height):
-                brightness = get_brightness(pix[x, y], x, y)
-                # brightness = int(brightness > 0.5)
-                brightness = round(brightness*100)/100
-                if i > 0:
-                    diff = brightness - prev_frame[x][y]
-                    frame[x].append(brightness if diff else -1)
-                else:
-                    frame[x].append(brightness)
+        frame = getFrame(img, width, height, prev_frame)
         prev_frame = frame
         frames.append(frame)
     
@@ -234,8 +220,8 @@ def save_brightness(fullname, imgs):
     string = string.replace("[", "{")
     string = string.replace("]", "}")
     string = string.replace(" ", "")
-    string = string.replace("0.0", "0") # don't know why 0.0 even occurs
-    string = string.replace("1.0", "1") # don't know why 1.0 even occurs
+    string = string.replace("0.0,", "0,") # don't know why 0.0 occurs
+    string = string.replace("1.0", "1") # don't know why 1.0 occurs
 
     if compression:
         a = zlib.compress(string.encode("utf-8"))
@@ -244,6 +230,23 @@ def save_brightness(fullname, imgs):
     else:
         result_file.write(string)
     result_file.close()
+
+def getFrame(img, width, height, prev_frame):
+    pix = img.load()
+
+    frame = [] # becomes a 2d list holding all brightness values
+    for x in range(width):
+        frame.append([])
+        for y in range(height):
+            brightness = get_brightness(pix[x, y], x, y)
+            # brightness = int(brightness > 0.5)
+            brightness = round(brightness*100)/100
+            if prev_frame:
+                diff = brightness - prev_frame[x][y]
+                frame[x].append(brightness if diff else -1)
+            else:
+                frame[x].append(brightness)
+    return frame
 
 ## CODE EXECUTION ####################
 
