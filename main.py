@@ -190,8 +190,8 @@ def getPixels(name):
         return [Image.open(infile)]
 
 def get_brightness(tup, x, y):
-    if x == 0 and y == 0:
-        print(tup)
+    # if x == 0 and y == 0:
+    #     print(tup)
 
     brightness = (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
     if len(tup) == 4:
@@ -200,19 +200,31 @@ def get_brightness(tup, x, y):
         return 0
 
 def save_brightness(fullname, imgs):
+    initial_frame = []
     prev_frame = []
     frames = []
 
-    width, height = imgs[0].size  # Get the width and hight of the PILImage for iterating over
-    print("width: " + str(width) + ", " + "height: " + str(height))
+    width, height = imgs[0].size  # get the width and hight of the PILImage for iterating over
 
-    print("len(imgs): " + str(len(imgs)))
     for i in range(len(imgs)):
+        if i == 0:
+            # prev_frame is an empty list at this point
+            initial_frame = getFrame(imgs[0], width, height, prev_frame)
+            continue # we'll put the first frame in the frames list as the last one, after this for loop
+        
         img = imgs[i]
-        frame = getFrame(img, width, height, prev_frame)
+        if i == 1:
+            frame = getFrame(img, width, height, initial_frame)
+        else:
+            frame = getFrame(img, width, height, prev_frame)
         prev_frame = frame
         frames.append(frame)
-    
+    # get the first frame
+    # we don't want to redraw the entire screen at the start of every loop
+    # prev_frame is the last frame at this point
+    frame = getFrame(imgs[0], width, height, prev_frame)
+    frames.append(frame)
+
     name = fullname.split(".",1)[0] # get the name before the "."
     result_file = open("output/" + name + ".txt", "w")
     string = str(frames)
@@ -239,8 +251,9 @@ def getFrame(img, width, height, prev_frame):
         frame.append([])
         for y in range(height):
             brightness = get_brightness(pix[x, y], x, y)
-            # brightness = int(brightness > 0.5)
             brightness = round(brightness*100)/100
+
+            # when diff is 0, we don't redraw the same character by assigning -1
             if prev_frame:
                 diff = brightness - prev_frame[x][y]
                 frame[x].append(brightness if diff else -1)
