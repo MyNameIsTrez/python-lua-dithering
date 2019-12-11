@@ -1,12 +1,12 @@
 import os
+import sys
 from PIL import Image
-from PIL import GifImagePlugin
 
 def print_char_blocks():
-    chars_img = Image.open('chars.png')
+    chars_img = PILImage.open('chars.png')
     chars_pix = chars_img.load()
 
-    width, height = chars_img.size  # Get the width and hight of the image for iterating over
+    width, height = chars_img.size  # Get the width and hight of the PILImage for iterating over
 
     char_width = 18
     char_height = 27
@@ -116,7 +116,7 @@ def print_char_blocks():
 
     for char_index in range(char_count):
         char_size = (18, 24)
-        char_img = Image.new('RGB', char_size, color = 'black')
+        char_img = PILImage.new('RGB', char_size, color = 'black')
         char_pix = char_img.load()
         char_colored_blocks = 0
 
@@ -144,33 +144,74 @@ def print_char_blocks():
     print("\nchar_blocks_sorted_dict: ")
     print(char_blocks_sorted_dict)
 
-def save_brightness(name, fileType):
-    if fileType == "jpeg":
-        img = Image.open(name + "." + fileType)
+def getPixels(name, extension):
+    infile = name + "." + extension
+    if extension == "gif":
+        try:
+            im = Image.open(infile)
+        except IOError:
+            print("Cant load"), infile
+            sys.exit(1)
+        i = 0
+
+        # sometimes helps, other times it does not, see the next comment
+        # mypalette = im.getpalette()
+
+        new_imgs = []
+
+        try:
+            while 1:
+                # sometimes helps, other times it does not
+                # im.putpalette(mypalette)
+                new_im = Image.new("RGBA", im.size)
+                new_im.paste(im)
+                # new_im.save('police/'+str(i)+'.png')
+                new_imgs.append(new_im)
+
+                i += 1
+                im.seek(im.tell() + 1)
+
+        except EOFError:
+            return new_imgs
+    elif extension == "jpeg":
+        return [Image.open(infile)]
+
+def get_brightness(tup):
+    return (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
+
+def save_brightness(name, imgs):
+    prev_result = []
+    for i in range(len(imgs)):
+        img = imgs[i]
+
         pix = img.load()
 
-        width, height = img.size  # Get the width and hight of the image for iterating over
+        width, height = img.size  # Get the width and hight of the PILImage for iterating over
 
         result = [] # becomes a 2d list holding all brightness values
         for x in range(width):
             result.append([])
             for y in range(height):
-                r, g, b = pix[x, y]
-                brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-                brightness = round(brightness*1000)/1000
-                result[x].append(brightness)
+                brightness = get_brightness(pix[x, y])
+                brightness = round(brightness*100)/100
+                if i > 0:
+                    diff = brightness - prev_result[x][y]
+                    result[x].append(brightness if diff else -1)
+                else:
+                    result[x].append(brightness)
+        prev_result = result
 
-        # print(result)
-        result_file = open(name + ".txt", "w")
+        result_file = open("output/" + name + str(i+1) + ".txt", "w")
         string = str(result)
         string = string.replace("[", "{")
         string = string.replace("]", "}")
         result_file.write(string)
         result_file.close()
-    elif fileType == "gif":
-        imageObject = Image.open(name + "." + img)
+        i += 1
 
 
 # print_char_blocks()
-save_brightness("dogs 1 - 226x85", "jpeg")
-# save_brightness("dogs 1 - 226x85", "gif")
+# save_brightness("dogs 1 - 226x85", "jpeg")
+
+name = "police"
+save_brightness(name, getPixels("input/" + name, "gif"))

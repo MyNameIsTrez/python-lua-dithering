@@ -16,7 +16,7 @@ print(imageObject.n_frames)
 
 # Display individual frames from the loaded animated GIF file
 
-for frame in range(0,imageObject.n_frames):
+for frame in range(imageObject.n_frames):
 
     imageObject.seek(frame)
 
