@@ -200,29 +200,28 @@ def get_brightness(tup, x, y):
         return 0
 
 def save_brightness(fullname, imgs):
+    prev_i = None
     initial_frame = []
-    prev_frame = []
     frames = []
 
     width, height = imgs[0].size  # get the width and hight of the PILImage for iterating over
 
     for i in range(len(imgs)):
         if i == 0:
-            # prev_frame is an empty list at this point
-            initial_frame = getFrame(imgs[0], width, height, prev_frame)
+            # prev_i is None at this point
+            initial_frame = getFrame(imgs, i, width, height, prev_i, frames, initial_frame)
             continue # we'll put the first frame in the frames list as the last one, after this for loop
         
-        img = imgs[i]
         if i == 1:
-            frame = getFrame(img, width, height, initial_frame)
+            frame = getFrame(imgs, i, width, height, prev_i, frames, initial_frame)
         else:
-            frame = getFrame(img, width, height, prev_frame)
-        prev_frame = frame
+            frame = getFrame(imgs, i, width, height, prev_i, frames, initial_frame)
+        prev_i = i
         frames.append(frame)
-    # get the first frame
+    # gets the first frame
     # we don't want to redraw the entire screen at the start of every loop
-    # prev_frame is the last frame at this point
-    frame = getFrame(imgs[0], width, height, prev_frame)
+    # prev_i is the last frame at this point
+    frame = getFrame(imgs, 0, width, height, prev_i, frames, initial_frame)
     frames.append(frame)
 
     name = fullname.split(".",1)[0] # get the name before the "."
@@ -243,7 +242,8 @@ def save_brightness(fullname, imgs):
         result_file.write(string)
     result_file.close()
 
-def getFrame(img, width, height, prev_frame):
+def getFrame(imgs, i, width, height, prev_i, frames, initial_frame):
+    img = imgs[i]
     pix = img.load()
 
     frame = [] # becomes a 2d list holding all brightness values
@@ -252,6 +252,39 @@ def getFrame(img, width, height, prev_frame):
         for y in range(height):
             brightness = get_brightness(pix[x, y], x, y)
             brightness = round(brightness*100)/100
+
+            print(prev_i)
+            print("AAAAAAAA")
+            if prev_i != 1 and prev_i != None:
+                prev_frame = frames[prev_i]
+            elif prev_i == 1:
+                prev_frame = initial_frame
+            elif prev_i == None:
+                prev_frame = []
+
+            # NEED A WHILE LOOP HERE THAT GOES THROUGH ALL '-1' POINTERS TO FIND THE SOURCE VALUE
+
+            # not sure if this part is necessary: "prev_frame and"
+            # if prev_frame and prev_frame[x][y] == -1:
+                
+
+            # for i in range(len(imgs)):
+            #     if i == 0:
+            #         # prev_frame is an empty list at this point
+            #         initial_frame = getFrame(imgs, i, width, height, prev_frame)
+            #         continue # we'll put the first frame in the frames list as the last one, after this for loop
+                
+            #     if i == 1:
+            #         frame = getFrame(imgs, i, width, height, prev_frame)
+            #     else:
+            #         frame = getFrame(imgs, i, width, height, prev_frame)
+            #     prev_frame = frame
+            #     frames.append(frame)
+            # # gets the first frame
+            # # we don't want to redraw the entire screen at the start of every loop
+            # # prev_frame is the last frame at this point
+            # frame = getFrame(imgs, 0, width, height, prev_frame)
+            # frames.append(frame)
 
             # when diff is 0, we don't redraw the same character by assigning -1
             if prev_frame:
