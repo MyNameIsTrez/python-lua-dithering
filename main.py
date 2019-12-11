@@ -1,6 +1,7 @@
 import os
 import sys
 from PIL import Image
+import zlib
 
 def print_char_blocks():
     chars_img = PILImage.open('chars.png')
@@ -181,6 +182,8 @@ def get_brightness(tup):
 
 def save_brightness(name, imgs):
     prev_result = []
+    frames = []
+
     for i in range(len(imgs)):
         img = imgs[i]
 
@@ -188,30 +191,39 @@ def save_brightness(name, imgs):
 
         width, height = img.size  # Get the width and hight of the PILImage for iterating over
 
-        result = [] # becomes a 2d list holding all brightness values
+        frame = [] # becomes a 2d list holding all brightness values
         for x in range(width):
-            result.append([])
+            frame.append([])
             for y in range(height):
                 brightness = get_brightness(pix[x, y])
                 brightness = round(brightness*100)/100
                 if i > 0:
                     diff = brightness - prev_result[x][y]
-                    result[x].append(brightness if diff else -1)
+                    frame[x].append(brightness if diff else -1)
                 else:
-                    result[x].append(brightness)
-        prev_result = result
+                    frame[x].append(brightness)
+        prev_result = frame
+        frames.append(frame)
+    
+    result_file = open("output/" + name + ".txt", "w")
+    string = str(frames)
 
-        result_file = open("output/" + name + str(i+1) + ".txt", "w")
-        string = str(result)
-        string = string.replace("[", "{")
-        string = string.replace("]", "}")
-        result_file.write(string)
-        result_file.close()
-        i += 1
+    string = string.replace("[", "{")
+    string = string.replace("]", "}")
+    string = string.replace(" ", "")
+    string = string.replace("1.0", "1") # don't know why 1.0 even occurs, 0 or 0.0 doesn't occur for some reason though
 
+    a = zlib.compress(string.encode("utf-8"))
+    b = str(a)
+    result_file.write(b)
+    # result_file.write(zlib.compress("ASDASJSAASIUDHIUSAHDSAFYTAFSTRDSAC"))
+    # result_file.write(zlib.compress(b"ASDASJSAASIUDHIUSAHDSAFYTAFSTRDSAC"))
+    result_file.close()
 
 # print_char_blocks()
 # save_brightness("dogs 1 - 226x85", "jpeg")
 
-name = "police"
-save_brightness(name, getPixels("input/" + name, "gif"))
+name = "toilet"
+extension = "gif"
+
+save_brightness(name, getPixels("input/" + name, extension))
