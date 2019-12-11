@@ -1,7 +1,16 @@
+## IMPORTING ####################
+
 import os
 import sys
+import time
 from PIL import Image
 import zlib
+
+## EDITABLE VARIABLES ####################
+
+compression = False
+
+## FUNCTIONS ####################
 
 def print_char_blocks():
     chars_img = PILImage.open('chars.png')
@@ -216,14 +225,35 @@ def save_brightness(fullname, imgs):
     string = string.replace(" ", "")
     string = string.replace("1.0", "1") # don't know why 1.0 even occurs, 0 or 0.0 doesn't occur for some reason though
 
-    a = zlib.compress(string.encode("utf-8"))
-    b = str(a)
-    result_file.write(b)
+    if compression:
+        a = zlib.compress(string.encode("utf-8"))
+        b = str(a)
+        result_file.write(b)
+    else:
+        result_file.write(string)
     result_file.close()
+
+## CODE EXECUTION ####################
 
 # print_char_blocks()
 # save_brightness("dogs 1 - 226x85", "jpeg")
 
+startTime = time.time()
+
 names = os.listdir("input")
 for name in names:
     save_brightness(name, getPixels(name))
+
+precision = 10 ** 3
+elapsedTime = int((time.time() - startTime) * precision) / precision
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+print(bcolors.OKGREEN + "Elapsed time:", bcolors.WARNING + str(elapsedTime) + " seconds." + bcolors.ENDC)
