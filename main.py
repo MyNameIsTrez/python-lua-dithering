@@ -145,8 +145,10 @@ def print_char_blocks():
     print("\nchar_blocks_sorted_dict: ")
     print(char_blocks_sorted_dict)
 
-def getPixels(name, extension):
-    infile = name + "." + extension
+def getPixels(name):
+    infile = "input/" + name
+    extension = name.split(".",1)[1] # get the extension after the "."
+
     if extension == "gif":
         try:
             im = Image.open(infile)
@@ -180,7 +182,7 @@ def getPixels(name, extension):
 def get_brightness(tup):
     return (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
 
-def save_brightness(name, imgs):
+def save_brightness(fullname, imgs):
     prev_result = []
     frames = []
 
@@ -205,6 +207,7 @@ def save_brightness(name, imgs):
         prev_result = frame
         frames.append(frame)
     
+    name = fullname.split(".",1)[0] # get the name before the "."
     result_file = open("output/" + name + ".txt", "w")
     string = str(frames)
 
@@ -216,14 +219,11 @@ def save_brightness(name, imgs):
     a = zlib.compress(string.encode("utf-8"))
     b = str(a)
     result_file.write(b)
-    # result_file.write(zlib.compress("ASDASJSAASIUDHIUSAHDSAFYTAFSTRDSAC"))
-    # result_file.write(zlib.compress(b"ASDASJSAASIUDHIUSAHDSAFYTAFSTRDSAC"))
     result_file.close()
 
 # print_char_blocks()
 # save_brightness("dogs 1 - 226x85", "jpeg")
 
-name = "toilet"
-extension = "gif"
-
-save_brightness(name, getPixels("input/" + name, extension))
+names = os.listdir("input")
+for name in names:
+    save_brightness(name, getPixels(name))
