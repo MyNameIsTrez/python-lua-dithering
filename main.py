@@ -197,8 +197,8 @@ def get_brightness(tup):
         return 0
 
 def save_brightness(fullname, imgs):
-    prev_frame = []
-    frames = []
+    prev_frame = [] # holds the actual brightness values
+    frames = [] # holds the brightness values, but with -1 if the (x, y)'s brightness is the same as the last frame
 
     width, height = imgs[0].size  # Get the width and hight of the PILImage for iterating over
 
@@ -209,19 +209,23 @@ def save_brightness(fullname, imgs):
 
         frame = [] # becomes a 2d list holding all brightness values
         for x in range(width):
+            prev_frame.append([])
             frame.append([])
+
             for y in range(height):
                 brightness = get_brightness(pix[x, y])
-                # brightness = int(brightness > 0.5)
-                brightness = round(brightness*100)/100
+                brightness = round(brightness * 100) / 100
+
+                prev_frame[x].append(brightness)
+                
                 if i > 0:
                     diff = brightness - prev_frame[x][y]
                     frame[x].append(brightness if diff else -1)
                 else:
                     frame[x].append(brightness)
-        prev_frame = frame
+
         frames.append(frame)
-    
+
     name = fullname.split(".",1)[0] # get the name before the "."
     result_file = open("output/" + name + ".txt", "w")
     string = str(frames)
