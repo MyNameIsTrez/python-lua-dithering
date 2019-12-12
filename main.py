@@ -189,7 +189,7 @@ def getPixels(name):
     elif extension == "jpeg":
         return [Image.open(infile)]
 
-def get_brightness(tup, x, y):
+def get_brightness(tup):
     brightness = (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
     if len(tup) == 4:
         return brightness * tup[3] / 255
@@ -211,7 +211,7 @@ def save_brightness(fullname, imgs):
         for x in range(width):
             frame.append([])
             for y in range(height):
-                brightness = get_brightness(pix[x, y], x, y)
+                brightness = get_brightness(pix[x, y])
                 # brightness = int(brightness > 0.5)
                 brightness = round(brightness*100)/100
                 if i > 0:
