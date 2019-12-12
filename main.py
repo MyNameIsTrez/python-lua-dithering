@@ -58,61 +58,84 @@ def get_brightness(tup):
         return 0
 
 def media_convert_to_chars(fullname, imgs):
-    prev_frame = [] # holds the actual brightness values
-    frames = [] # holds the brightness values, but with -1 if the (x, y)'s brightness is the same as the last frame
+    real_frames = [] # holds the actual brightness values
+    optimized_frames = [] # holds the brightness values, but with é if the (x, y)'s brightness is the same as the last frame
 
     width, height = imgs[0].size
 
-    for i in range(len(imgs)):
+    frameCount = len(imgs)
+    for i in range(frameCount):
         img = imgs[i]
         pix = img.load()
 
-        prev_frame.append([])
-        frames.append([])
+        real_frames.append([])
+        optimized_frames.append([])
         for x in range(width):
-            prev_frame[i].append([])
-            frames[i].append([])
+            real_frames[i].append([])
+            optimized_frames[i].append([])
 
             for y in range(height):
                 brightness = get_brightness(pix[x, y])
                 brightness = round(brightness * 100) / 100
 
-                prev_frame[i][x].append(brightness)
+                real_frames[i][x].append(brightness)
                 
                 if i > 0:
-                    # save the brightness if it isn't equal to the brightness of the last frame, else save -1 to indicate it shouldn't draw here
-                    diff = brightness - prev_frame[i - 1][x][y]
-                    frames[i][x].append(brightness if diff else -1)
+                    # save the brightness if it isn't equal to the brightness of the last frame, else save é to indicate it shouldn't draw here
+                    diff = brightness - real_frames[i - 1][x][y]
+                    if diff:
+                        char = dithering.getClosestChar(brightness)
+                    else:
+                        char = "é" # signifies repetition of a previous frame's character, this character shouldn't get drawn
+                    optimized_frames[i][x].append(char)
                 else:
-                    frames[i][x].append(brightness) # necessary to create initial_frame, and for the 2nd frame
+                    char = dithering.getClosestChar(brightness)
+                    optimized_frames[i][x].append(char) # necessary to create initial_frame, and for the 2nd frame
     
     # get the initiallly drawn frame, that doesn't get drawn after each loop
-    initial_frame = deepcopy(frames)[0]
+    initial_frame = deepcopy(optimized_frames)[0]
 
     for x in range(width):
         for y in range(height):
-            # set the first frame's position to -1 if the last frame is -1
-            if frames[-1][x][y] == -1:
-                frames[0][x][y] = -1
+            # sets the first frame to é, if the last frame is also é
+            if optimized_frames[-1][x][y] == "é":
+                optimized_frames[0][x][y] = "é" # signifies repetition of a previous frame's character, this character shouldn't get drawn
 
-    saveString(fullname, initial_frame, frames)
+    saveString(fullname, width, height, initial_frame, optimized_frames, frameCount)
 
-def saveString(fullname, initial_frame, frames):
+def saveString(fullname, width, height, initial_frame, optimized_frames, frameCount):
     name = fullname.split(".",1)[0] # get the name before the "."
     result_file = open("output/" + name + ".txt", "w")
     
-    final_frames = { "initial_frame": initial_frame, "frames": frames }
-    string = str(final_frames)
+    stringList = []
 
-    string = string.replace(":", "=")
-    string = string.replace("'", "")
-
-    string = string.replace("[", "{")
-    string = string.replace("]", "}")
-    string = string.replace(" ", "")
+    # add all strings in initial_frame to stringList
+    for x in range(width):
+        for y in range(height):
+            s = initial_frame[x][y]
+            stringList.append(s)
     
-    string = string.replace("0.0,", "0,")
-    string = string.replace("1.0", "1")
+    # add all strings in optimized_frames to stringList
+    for f in range(frameCount):
+        for x in range(width):
+            for y in range(height):
+                s = optimized_frames[f][x][y]
+                stringList.append(s)
+    
+    string = "".join(stringList)
+
+    # final_frames = { "initial_frame": initial_frame, "optimized_frames": optimized_frames }
+    # string = str(final_frames)
+
+    # string = string.replace(":", "=")
+    # string = string.replace("'", "")
+
+    # string = string.replace("[", "{")
+    # string = string.replace("]", "}")
+    # string = string.replace(" ", "")
+    
+    # string = string.replace("0.0,", "0,")
+    # string = string.replace("1.0", "1")
 
     if compression:
         a = zlib.compress(string.encode("utf-8"))
