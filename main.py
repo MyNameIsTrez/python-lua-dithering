@@ -5,154 +5,15 @@ import sys
 import time
 from PIL import Image
 import zlib
+from copy import copy, deepcopy
+
+import dithering
 
 ## EDITABLE VARIABLES ####################
 
 compression = False
 
 ## FUNCTIONS ####################
-
-def print_char_blocks():
-    chars_img = PILImage.open('chars.png')
-    chars_pix = chars_img.load()
-
-    width, height = chars_img.size  # Get the width and hight of the PILImage for iterating over
-
-    char_width = 18
-    char_height = 27
-    char_count = int((width) / char_width)
-    pixel_block_size = 3
-
-    chars_blocks = []
-    char_blocks_sorted_dict = {}
-
-    chars = [
-        ' ',
-        '!',
-        '"',
-        '#',
-        '$',
-        '%',
-        '&',
-        "'",
-        '(',
-        ')',
-        '*',
-        '+',
-        ',',
-        '-',
-        '.',
-        '/',
-        '0',
-        '1',
-        '2',
-        '3',
-        '4',
-        '5',
-        '6',
-        '7',
-        '8',
-        '9',
-        ':',
-        ';',
-        '<',
-        '=',
-        '>',
-        '?',
-        '@',
-        'A',
-        'B',
-        'C',
-        'D',
-        'E',
-        'F',
-        'G',
-        'H',
-        'I',
-        'J',
-        'K',
-        'L',
-        'M',
-        'N',
-        'O',
-        'P',
-        'Q',
-        'R',
-        'S',
-        'T',
-        'U',
-        'V',
-        'W',
-        'X',
-        'Y',
-        'Z',
-        '[',
-        '\\',
-        ']',
-        '^',
-        '_',
-        '?',
-        'a',
-        'b',
-        'c',
-        'd',
-        'e',
-        'f',
-        'g',
-        'h',
-        'i',
-        'j',
-        'k',
-        'l',
-        'm',
-        'n',
-        'o',
-        'p',
-        'q',
-        'r',
-        's',
-        't',
-        'u',
-        'v',
-        'w',
-        'x',
-        'y',
-        'z',
-        '{',
-        '|',
-        '}',
-        '~'
-    ]
-
-    for char_index in range(char_count):
-        char_size = (18, 24)
-        char_img = PILImage.new('RGB', char_size, color = 'black')
-        char_pix = char_img.load()
-        char_colored_blocks = 0
-
-        for x in range(int(char_width / pixel_block_size)):
-            for y in range(int(char_height / pixel_block_size)):
-                pixel_block_rgb = chars_pix[char_index * char_width + x * pixel_block_size, y * pixel_block_size]
-                if pixel_block_rgb != (0, 0, 0):
-                    char_colored_blocks += 1
-                for bx in range (pixel_block_size):
-                    for by in range (pixel_block_size):
-                        char_pix[x * pixel_block_size + bx, y * pixel_block_size + by] = pixel_block_rgb
-        
-        char = chars[char_index]
-        chars_blocks.append([char, char_colored_blocks])
-
-        if not char_colored_blocks in char_blocks_sorted_dict:
-            char_blocks_sorted_dict[char_colored_blocks] = []
-        char_blocks_sorted_dict[char_colored_blocks].append(char)
-
-    char_blocks_sorted = chars_blocks.copy()
-    char_blocks_sorted.sort(key = lambda x: x[1])
-
-    print("\nchar_blocks_sorted: ")
-    print(char_blocks_sorted)
-    print("\nchar_blocks_sorted_dict: ")
-    print(char_blocks_sorted_dict)
 
 def getPixels(name):
     infile = "input/" + name
@@ -196,50 +57,63 @@ def get_brightness(tup):
     else:
         return 0
 
-def save_brightness(fullname, imgs):
+def media_convert_to_chars(fullname, imgs):
     prev_frame = [] # holds the actual brightness values
     frames = [] # holds the brightness values, but with -1 if the (x, y)'s brightness is the same as the last frame
 
-    width, height = imgs[0].size  # Get the width and hight of the PILImage for iterating over
+    width, height = imgs[0].size  # Get the width and hight of the Image for iterating over
 
     for i in range(len(imgs)):
         img = imgs[i]
         pix = img.load()
 
         prev_frame.append([])
-        frame = [] # becomes a 2d list holding all brightness values
+        frames.append([]) # becomes a 2d list holding all brightness values
         for x in range(width):
             prev_frame[i].append([])
-            frame.append([])
+            frames[i].append([])
 
             for y in range(height):
                 brightness = get_brightness(pix[x, y])
                 brightness = round(brightness * 100) / 100
 
-                if x == 15 and y == 23:
-                    print("brightness: ", brightness)
+                # if x == 15 and y == 23:
+                #     print("brightness: ", brightness)
                 prev_frame[i][x].append(brightness)
                 
                 if i > 0:
                     diff = brightness - prev_frame[i - 1][x][y]
-                    frame[x].append(brightness if diff else -1)
+                    frames[i][x].append(brightness if diff else -1)
                 else:
-                    frame[x].append(brightness)
+                    frames[i][x].append(brightness)
                 
-                if x == 15 and y == 23:
-                    print("prev_frame[i][x][y]:", prev_frame[i][x][y], "frame[x][y]:", frame[x][y])
+                # if x == 15 and y == 23:
+                #     print("prev_frame[i][x][y]:", prev_frame[i][x][y], "frames[i][x][y]:", frames[i][x][y])
+    
+    # get the initiallly drawn frame, that doesn't get drawn after each loop
+    initial_frame = deepcopy(frames)[0]
 
-        frames.append(frame)
+    for x in range(width):
+        for y in range(height):
+            # set the first frame's position to -1 if the last frame is -1
+            if frames[-1][x][y] == -1:
+                frames[0][x][y] = -1
 
     name = fullname.split(".",1)[0] # get the name before the "."
     result_file = open("output/" + name + ".txt", "w")
-    string = str(frames)
+    
+    final_frames = { "initial_frame": initial_frame, "frames": frames }
+    string = str(final_frames)
+
+    string = string.replace(":", "=")
+    string = string.replace("'", "")
 
     string = string.replace("[", "{")
     string = string.replace("]", "}")
     string = string.replace(" ", "")
-    string = string.replace("0.0,", "0,") # don't know why 0.0 occurs
-    string = string.replace("1.0", "1") # don't know why 1.0 occurs
+    
+    string = string.replace("0.0,", "0,")
+    string = string.replace("1.0", "1")
 
     if compression:
         a = zlib.compress(string.encode("utf-8"))
@@ -251,25 +125,24 @@ def save_brightness(fullname, imgs):
 
 ## CODE EXECUTION ####################
 
-# print_char_blocks()
-# save_brightness("dogs 1 - 226x85", "jpeg")
+# media_convert_to_chars("dogs 1 - 226x85", "jpeg")
 
-startTime = time.time()
+# startTime = time.time()
 
-names = os.listdir("input")
-for name in names:
-    save_brightness(name, getPixels(name))
+# names = os.listdir("input")
+# for name in names:
+#     media_convert_to_chars(name, getPixels(name))
 
-precision = 10 ** 3
-elapsedTime = int((time.time() - startTime) * precision) / precision
+# precision = 10 ** 3
+# elapsedTime = int((time.time() - startTime) * precision) / precision
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-print(bcolors.OKGREEN + "Elapsed time:", bcolors.WARNING + str(elapsedTime) + " seconds." + bcolors.ENDC)
+# class bcolors:
+#     HEADER = '\033[95m'
+#     OKBLUE = '\033[94m'
+#     OKGREEN = '\033[92m'
+#     WARNING = '\033[93m'
+#     FAIL = '\033[91m'
+#     ENDC = '\033[0m'
+#     BOLD = '\033[1m'
+#     UNDERLINE = '\033[4m'
+# print(bcolors.OKGREEN + "Elapsed time:", bcolors.WARNING + str(elapsedTime) + " seconds." + bcolors.ENDC)
