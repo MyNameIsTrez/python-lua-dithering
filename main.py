@@ -204,25 +204,30 @@ def save_brightness(fullname, imgs):
 
     for i in range(len(imgs)):
         img = imgs[i]
-
         pix = img.load()
 
+        prev_frame.append([])
         frame = [] # becomes a 2d list holding all brightness values
         for x in range(width):
-            prev_frame.append([])
+            prev_frame[i].append([])
             frame.append([])
 
             for y in range(height):
                 brightness = get_brightness(pix[x, y])
                 brightness = round(brightness * 100) / 100
 
-                prev_frame[x].append(brightness)
+                if x == 15 and y == 23:
+                    print("brightness: ", brightness)
+                prev_frame[i][x].append(brightness)
                 
                 if i > 0:
-                    diff = brightness - prev_frame[x][y]
+                    diff = brightness - prev_frame[i - 1][x][y]
                     frame[x].append(brightness if diff else -1)
                 else:
                     frame[x].append(brightness)
+                
+                if x == 15 and y == 23:
+                    print("prev_frame[i][x][y]:", prev_frame[i][x][y], "frame[x][y]:", frame[x][y])
 
         frames.append(frame)
 
