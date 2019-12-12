@@ -23,7 +23,7 @@ def getImagesArray(name):
             print("Cant load"), infile
             sys.exit(1)
 
-        # possibly helps, but it breaks the output right now, see the next comment
+        # the next line possibly helps, but it breaks the output right now, see the next comment
         # mypalette = im.getpalette()
 
         new_imgs = []
@@ -31,7 +31,7 @@ def getImagesArray(name):
         try:
             i = 0
             while 1:
-                # possibly helps, but it breaks the output right now
+                # the next line possibly helps, but it breaks the output right now
                 # im.putpalette(mypalette)
 
                 new_im = Image.new("RGBA", im.size)
@@ -61,42 +61,43 @@ def media_convert_to_chars(fullname, imgs):
     width, height = imgs[0].size
 
     frameCount = len(imgs)
-    for i in range(frameCount):
-        img = imgs[i]
+    for f in range(frameCount):
+        img = imgs[f]
         pix = img.load()
 
         real_frames.append([])
         optimized_frames.append([])
         for x in range(width):
-            real_frames[i].append([])
-            optimized_frames[i].append([])
+            real_frames[f].append([])
+            optimized_frames[f].append([])
 
             for y in range(height):
                 brightness = get_brightness(pix[x, y])
                 brightness = round(brightness * 100) / 100
 
-                real_frames[i][x].append(brightness)
+                real_frames[f][x].append(brightness)
                 
-                if i > 0:
+                if f > 0:
                     # save the brightness if it isn't equal to the brightness of the last frame, else save "t" to indicate it shouldn't draw here
-                    diff = brightness - real_frames[i - 1][x][y]
+                    diff = brightness - real_frames[f - 1][x][y]
                     if diff:
                         char = dithering.getClosestChar(brightness)
                     else:
-                        char = "t" # signifies repetition of a previous frame's character, this character shouldn't get drawn
-                    optimized_frames[i][x].append(char)
+                        char = "t" # signifies repetition of a previous frame's character; this character should never get drawn
+                    optimized_frames[f][x].append(char)
                 else:
                     char = dithering.getClosestChar(brightness)
-                    optimized_frames[i][x].append(char) # necessary to create initial_frame, and for the 2nd frame
+                    optimized_frames[f][x].append(char) # necessary to create initial_frame, and for the 2nd frame
     
     # get the initiallly drawn frame, that doesn't get drawn after each loop
     initial_frame = deepcopy(optimized_frames)[0]
 
+    # I SUSPECT THIS CODE CAUSES THE LAST FRAME TO NOT BE CLEARED COMPLETELY FOR SOME REASON!!!
     for x in range(width):
         for y in range(height):
-            # sets the first frame to "t", if the last frame is also "t"
-            if optimized_frames[-1][x][y] == "t":
-                optimized_frames[0][x][y] = "t" # signifies repetition of a previous frame's character, this character shouldn't get drawn
+            # sets the first frame character position to "t", if the last frame's equal character position is the same character
+            if real_frames[-1][x][y] == real_frames[0][x][y]:
+                real_frames[0][x][y] = "t" # signifies repetition of a previous frame's character; this character should never get drawn
 
     saveString(fullname, width, height, initial_frame, optimized_frames, frameCount)
 
