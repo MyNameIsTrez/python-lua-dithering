@@ -8,6 +8,8 @@
 
 ## UNEDITABLE VARIABLES ####################
 
+# REMOVED THE "t" CHARACTER, BECAUSE WE NEED TO RESERVE ONE OF THE AVAILABLE CHARACTERS
+
 brightnessChars = {
 	0: [' '],
 	2: ['.'],
@@ -16,7 +18,7 @@ brightnessChars = {
 	5: ['-', ';', '^', '_'],
 	6: ['!', '"', '*', 'i', '|', '~'],
 	7: ['/', '<', '>', '\\', 'l'],
-	9: ['(', ')', '+', '?', 'Y', '?', 'r', 't', 'v', 'x', '{', '}'],
+	9: ['(', ')', '+', '?', 'Y', '?', 'r', 'v', 'x', '{', '}'], # 't' used to be here between 'r' and 'v'
 	10: ['=', 'J'],
 	11: ['%', 'I', 'L', 'T', '[', ']', 'c', 'f', 'j'],
 	12: ['1', '7', 'k', 'n', 'o', 'u'],

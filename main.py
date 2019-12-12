@@ -4,14 +4,11 @@ import os
 import sys
 import time
 from PIL import Image
-import zlib
 from copy import copy, deepcopy
 
 import dithering # should be placed in the same folder as this program
 
 ## EDITABLE VARIABLES ####################
-
-compression = False
 
 ## FUNCTIONS ####################
 
@@ -59,7 +56,7 @@ def get_brightness(tup):
 
 def media_convert_to_chars(fullname, imgs):
     real_frames = [] # holds the actual brightness values
-    optimized_frames = [] # holds the brightness values, but with é if the (x, y)'s brightness is the same as the last frame
+    optimized_frames = [] # holds the brightness values, but with "t" if the (x, y)'s brightness is the same as the last frame
 
     width, height = imgs[0].size
 
@@ -81,12 +78,12 @@ def media_convert_to_chars(fullname, imgs):
                 real_frames[i][x].append(brightness)
                 
                 if i > 0:
-                    # save the brightness if it isn't equal to the brightness of the last frame, else save é to indicate it shouldn't draw here
+                    # save the brightness if it isn't equal to the brightness of the last frame, else save "t" to indicate it shouldn't draw here
                     diff = brightness - real_frames[i - 1][x][y]
                     if diff:
                         char = dithering.getClosestChar(brightness)
                     else:
-                        char = "é" # signifies repetition of a previous frame's character, this character shouldn't get drawn
+                        char = "t" # signifies repetition of a previous frame's character, this character shouldn't get drawn
                     optimized_frames[i][x].append(char)
                 else:
                     char = dithering.getClosestChar(brightness)
@@ -97,9 +94,9 @@ def media_convert_to_chars(fullname, imgs):
 
     for x in range(width):
         for y in range(height):
-            # sets the first frame to é, if the last frame is also é
-            if optimized_frames[-1][x][y] == "é":
-                optimized_frames[0][x][y] = "é" # signifies repetition of a previous frame's character, this character shouldn't get drawn
+            # sets the first frame to "t", if the last frame is also "t"
+            if optimized_frames[-1][x][y] == "t":
+                optimized_frames[0][x][y] = "t" # signifies repetition of a previous frame's character, this character shouldn't get drawn
 
     saveString(fullname, width, height, initial_frame, optimized_frames, frameCount)
 
@@ -107,42 +104,42 @@ def saveString(fullname, width, height, initial_frame, optimized_frames, frameCo
     name = fullname.split(".",1)[0] # get the name before the "."
     result_file = open("output/" + name + ".txt", "w")
     
-    stringList = []
-
+    initial_frame_list = []
     # add all strings in initial_frame to stringList
     for x in range(width):
         for y in range(height):
             s = initial_frame[x][y]
-            stringList.append(s)
+            initial_frame_list.append(s)
     
+    optimized_frames_list = []
     # add all strings in optimized_frames to stringList
     for f in range(frameCount):
         for x in range(width):
             for y in range(height):
                 s = optimized_frames[f][x][y]
-                stringList.append(s)
+                optimized_frames_list.append(s)
     
-    string = "".join(stringList)
+    string_initial_frame = "".join(initial_frame_list)
+    string_optimized_frames = "".join(optimized_frames_list)
 
-    # final_frames = { "initial_frame": initial_frame, "optimized_frames": optimized_frames }
-    # string = str(final_frames)
+    data = {
+        "width": width,
+        "height": height,
+        "frame_count": frameCount,
+        "initial_frame": string_initial_frame,
+        "optimized_frames": string_optimized_frames
+    }
 
-    # string = string.replace(":", "=")
-    # string = string.replace("'", "")
+    string = str(data)
 
-    # string = string.replace("[", "{")
-    # string = string.replace("]", "}")
-    # string = string.replace(" ", "")
+    string = string.replace("'width': ", "width=")
+    string = string.replace(", 'height': ", ",height=")
+    string = string.replace(", 'frame_count': ", ",frame_count=")
+    string = string.replace(", 'initial_frame': ", ",initial_frame=")
+    string = string.replace(", 'optimized_frames': ", ",optimized_frames=")
     
-    # string = string.replace("0.0,", "0,")
-    # string = string.replace("1.0", "1")
+    result_file.write(string)
 
-    if compression:
-        a = zlib.compress(string.encode("utf-8"))
-        b = str(a)
-        result_file.write(b)
-    else:
-        result_file.write(string)
     result_file.close()
 
 ## CODE EXECUTION ####################
