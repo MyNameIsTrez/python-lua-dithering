@@ -190,9 +190,6 @@ def getPixels(name):
         return [Image.open(infile)]
 
 def get_brightness(tup, x, y):
-    if x == 0 and y == 0:
-        print(tup)
-
     brightness = (0.2126 * tup[0] + 0.7152 * tup[1] + 0.0722 * tup[2]) / 255
     if len(tup) == 4:
         return brightness * tup[3] / 255
@@ -204,9 +201,7 @@ def save_brightness(fullname, imgs):
     frames = []
 
     width, height = imgs[0].size  # Get the width and hight of the PILImage for iterating over
-    print("width: " + str(width) + ", " + "height: " + str(height))
 
-    print("len(imgs): " + str(len(imgs)))
     for i in range(len(imgs)):
         img = imgs[i]
 
