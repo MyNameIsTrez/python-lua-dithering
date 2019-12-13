@@ -14,7 +14,7 @@ outputImages = False
 
 ## FUNCTIONS ####################
 
-def getImagesArray(full_name):
+def get_images_array(full_name):
 	infile = "input/" + full_name
 	extension = full_name.split(".", 1)[1] # get the extension after the "."
 	
@@ -110,9 +110,9 @@ def media_convert_to_chars(full_name, imgs):
 			if real_frames[-1][x][y] == real_frames[0][x][y]:
 				real_frames[0][x][y] = "t" # signifies repetition of a previous frame's character; this character should never get drawn
 
-	saveString(full_name, width, height, initial_frame, optimized_frames, frameCount)
+	save_string(full_name, width, height, initial_frame, optimized_frames, frameCount)
 
-def saveString(full_name, width, height, initial_frame, optimized_frames, frameCount):
+def save_string(full_name, width, height, initial_frame, optimized_frames, frameCount):
 	name = full_name.split(".",1)[0] # get the name before the "."
 	result_file = open("output/" + name + ".txt", "w")
 	
@@ -160,7 +160,7 @@ startTime = time.time()
 
 names = os.listdir("input")
 for name in names:
-	media_convert_to_chars(name, getImagesArray(name))
+	media_convert_to_chars(name, get_images_array(name))
 
 precision = 10 ** 3
 elapsedTime = int((time.time() - startTime) * precision) / precision
