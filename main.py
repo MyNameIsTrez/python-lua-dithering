@@ -8,34 +8,42 @@ from copy import copy, deepcopy
 
 import dithering # should be placed in the same folder as this program
 
-## COLORING OUTPUT ####################
+## COLORING TERMINAL OUTPUT TEXT ####################
 
 class bcolors:
-	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKGREEN = '\033[92m'
-	WARNING = '\033[93m'
-	FAIL = '\033[91m'
-	ENDC = '\033[0m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
+	HEADER = "\033[95m"
+	OKBLUE = "\033[94m"
+	OKGREEN = "\033[92m"
+	WARNING = "\033[93m"
+	FAIL = "\033[91m"
+	ENDC = "\033[0m"
+	BOLD = "\033[1m"
+	UNDERLINE = "\033[4m"
 
 ## EDITABLE VARIABLES ####################
 
+computer_type = "desktop" # "laptop" or "desktop".
 new_width_stretched = True
-outputImages = False
+output_images = False
 
 # see tekkit/config/mod_ComputerCraft.cfg
-# my laptop's max size is (227, 85) and my pc's max size is (426, 160)
-max_width = 426
-max_height = 160
+if computer_type == "laptop":
+	max_width = 227
+	max_height = 85
+elif computer_type == "desktop":
+	max_width = 426
+	max_height = 160
+else:
+	print(bcolors.FAIL + "You didn't enter a valid 'computer_type' name!" + bcolors.ENDC)
 
 ## FUNCTIONS ####################
 
 def get_images_array(full_name):
-	infile = "input/" + full_name
+	infile = "inputs/" + full_name
 	extension = full_name.split(".", 1)[1] # get the extension after the "."
-	
+	name = full_name.split(".", 1)[0] # get the name before the "." by taking the first element
+	print(bcolors.OKBLUE + "Name: " + bcolors.HEADER + name + bcolors.ENDC)
+
 	try:
 		old_image = Image.open(infile) # image holds all frames, but can be treated as frame 0 at the start
 
@@ -50,8 +58,8 @@ def get_images_array(full_name):
 		else:
 			new_width = int(new_height * old_width / old_height)
 
-		print(bcolors.OKGREEN + "Old size: " + bcolors.WARNING + str((old_width, old_height)) + bcolors.ENDC)
-		print(bcolors.OKGREEN + "New size: " + bcolors.WARNING + str((new_width, new_height)) + bcolors.ENDC)
+		print(bcolors.OKGREEN + "	Old size: " + bcolors.WARNING + str(old_width) + " x " + str(old_height) + bcolors.ENDC)
+		print(bcolors.OKGREEN + "	New size: " + bcolors.WARNING + str(new_width) + " x " + str(new_height) + bcolors.ENDC)
 	except IOError:
 		print("Cant load"), infile
 		sys.exit(1)
@@ -68,10 +76,10 @@ def get_images_array(full_name):
 				# the next line possibly helps, but it breaks the output right now
 				# image.putpalette(mypalette)
 
-				new_image = old_image.convert('RGBA')
+				new_image = old_image.convert("RGBA")
 				new_image = new_image.resize((new_width, new_height), Image.ANTIALIAS)
-				if outputImages:
-					new_image.save('output-images/' + str(i) + '.png')
+				if output_images:
+					new_image.save("output-images/" + str(i) + ".png")
 
 				new_images.append(new_image)
 
@@ -81,9 +89,8 @@ def get_images_array(full_name):
 		except EOFError:
 			return new_images # return array
 	elif extension == "jpeg":
-		new_image = old_image.convert('RGB')
-		name = full_name.split(".", 1)[0] # get the name before the "." by taking the first element
-		new_image.save('output-images/' + name + '.jpeg')
+		new_image = old_image.convert("RGB")
+		new_image.save("output-images/" + name + ".jpeg")
 		return [non_transparent] # return the image output in an array
 
 def get_brightness(tup):
@@ -143,7 +150,7 @@ def media_convert_to_chars(full_name, imgs):
 
 def save_string(full_name, width, height, initial_frame, optimized_frames, frameCount):
 	name = full_name.split(".",1)[0] # get the name before the "."
-	result_file = open("output/" + name + ".txt", "w")
+	result_file = open(computer_type + " outputs/" + name + ".txt", "w")
 	
 	initial_frame_list = []
 	# add all strings in initial_frame to stringList
@@ -183,15 +190,22 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 
 	result_file.close()
 
+## MAIN FUNCTION ####################
+
+def main():
+	startTime = time.time()
+
+	print(bcolors.OKBLUE + "Computer type: " + bcolors.HEADER + computer_type)
+
+	names = os.listdir("inputs")
+	for name in names:
+		media_convert_to_chars(name, get_images_array(name))
+
+	precision = 10 ** 3
+	elapsedTime = int((time.time() - startTime) * precision) / precision
+
+	print(bcolors.OKBLUE + "Elapsed time: " + bcolors.HEADER + str(elapsedTime) + " seconds." + bcolors.ENDC)
+
 ## CODE EXECUTION ####################
 
-startTime = time.time()
-
-names = os.listdir("input")
-for name in names:
-	media_convert_to_chars(name, get_images_array(name))
-
-precision = 10 ** 3
-elapsedTime = int((time.time() - startTime) * precision) / precision
-
-print(bcolors.OKGREEN + "Elapsed time:", bcolors.WARNING + str(elapsedTime) + " seconds." + bcolors.ENDC)
+main()
