@@ -59,6 +59,7 @@ def getFrames(infile):
 		result = getFrame(sec, video)
 		if result == False:
 			video.release()
+			print() # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
 			return frames
 		frames.append(result)
 		print(bcolors.OKBLUE + "Gotten frames: " + bcolors.HEADER + str(len(frames) * fps * sleep) + "/" + str(frame_count) + bcolors.ENDC, end = "\r", flush = True)
@@ -78,7 +79,7 @@ def get_images_array(full_name):
 	infile = "inputs/" + full_name
 	extension = full_name.split(".", 1)[1] # get the extension after the "."
 	name = full_name.split(".", 1)[0] # get the name before the "." by taking the first element
-	print(bcolors.OKBLUE + "Name: " + bcolors.HEADER + name + bcolors.ENDC)
+	print(bcolors.OKGREEN + "Name: " + bcolors.HEADER + name + bcolors.ENDC)
 
 	try:
 		if extension == "mp4":
@@ -98,7 +99,7 @@ def get_images_array(full_name):
 		else:
 			new_width = int(new_height * old_width / old_height)
 
-		print("\n" + bcolors.OKGREEN + "	Old size: " + bcolors.WARNING + str(old_width) + " x " + str(old_height) + bcolors.ENDC)
+		print(bcolors.OKGREEN + "	Old size: " + bcolors.WARNING + str(old_width) + " x " + str(old_height) + bcolors.ENDC)
 		print(bcolors.OKGREEN + "	New size: " + bcolors.WARNING + str(new_width) + " x " + str(new_height) + bcolors.ENDC)
 	except IOError:
 		print("Cant load"), infile
@@ -125,10 +126,10 @@ def get_images_array(full_name):
 			return new_images # return array
 	elif extension == "mp4":
 		for index, old_image in enumerate(old_images):
-			print(bcolors.OKBLUE + "Resized frames: " + bcolors.HEADER + str(index) + "/" + str(len(old_images)) + bcolors.ENDC, end = "\r", flush = True)
+			print(bcolors.OKBLUE + "Resized frames: " + bcolors.HEADER + str(index + 1) + "/" + str(len(old_images)) + bcolors.ENDC, end = "\r", flush = True)
 			new_image = get_new_image(old_image, new_width, new_height, output_images, name, index)
 			new_images.append(new_image)
-		print("\n") # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
+		print() # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
 		return new_images
 	elif extension == "jpeg":
 		new_image = old_image.convert("RGB")
@@ -163,7 +164,7 @@ def media_convert_to_chars(full_name, imgs):
 
 	frameCount = len(imgs)
 	for f in range(frameCount):
-		print(bcolors.OKBLUE + "Creating optimized character frames: " + bcolors.HEADER + str(f) + "/" + str(frameCount) + bcolors.ENDC, end = "\r", flush = True)
+		print(bcolors.OKBLUE + "Creating optimized character frames: " + bcolors.HEADER + str(f + 1) + "/" + str(frameCount) + bcolors.ENDC, end = "\r", flush = True)
 		img = imgs[f]
 		pix = img.load()
 
@@ -205,7 +206,7 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 	
 	initial_frame_list = []
 	# add all strings in initial_frame to stringList
-	print("\n") # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
+	print() # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
 	print(bcolors.OKBLUE + "Saving initial frame to one string..." + bcolors.ENDC)
 	for x in range(width):
 		for y in range(height):
@@ -215,7 +216,7 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 	optimized_frames_list = []
 	# add all strings in optimized_frames to stringList
 	for f in range(frameCount):
-		print(bcolors.OKBLUE + "Saving frames to one string: " + bcolors.HEADER + str(f) + "/" + str(frameCount) + bcolors.ENDC, end = "\r", flush = True)
+		print(bcolors.OKBLUE + "Saving frames to one string: " + bcolors.HEADER + str(f + 1) + "/" + str(frameCount) + bcolors.ENDC, end = "\r", flush = True)
 		for x in range(width):
 			for y in range(height):
 				s = optimized_frames[f][x][y]
@@ -240,7 +241,7 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 	string = string.replace(", 'initial_frame': ", ",initial_frame=")
 	string = string.replace(", 'optimized_frames': ", ",optimized_frames=")
 	
-	print("\n") # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
+	print() # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
 	print(bcolors.OKBLUE + "Writing the string to a file..." + bcolors.ENDC)
 	result_file.write(string)
 
@@ -251,7 +252,7 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 def main():
 	startTime = time.time()
 
-	print(bcolors.OKBLUE + "Computer type: " + bcolors.HEADER + computer_type)
+	print(bcolors.OKGREEN + "Computer type: " + bcolors.HEADER + computer_type)
 
 	names = os.listdir("inputs")
 	for name in names:
