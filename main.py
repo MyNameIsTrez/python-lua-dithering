@@ -8,9 +8,27 @@ from copy import copy, deepcopy
 
 import dithering # should be placed in the same folder as this program
 
+## COLORING OUTPUT ####################
+
+class bcolors:
+	HEADER = '\033[95m'
+	OKBLUE = '\033[94m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[93m'
+	FAIL = '\033[91m'
+	ENDC = '\033[0m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+
 ## EDITABLE VARIABLES ####################
 
+new_width_stretched = True
 outputImages = False
+
+# see tekkit/config/mod_ComputerCraft.cfg
+# my laptop's max size is (227, 85) and my pc's max size is (426, 160)
+max_width = 426
+max_height = 160
 
 ## FUNCTIONS ####################
 
@@ -19,7 +37,21 @@ def get_images_array(full_name):
 	extension = full_name.split(".", 1)[1] # get the extension after the "."
 	
 	try:
-		image = Image.open(infile) # image holds all frames, but can be treated as frame 0 at the start
+		old_image = Image.open(infile) # image holds all frames, but can be treated as frame 0 at the start
+
+		old_width = old_image.size[0]
+		old_height = old_image.size[1]
+
+		new_height = max_height
+		
+		# get the new image width
+		if new_width_stretched:
+			new_width = max_width - 1 # the CC config's terminal_width variable has to be subtracted by 1
+		else:
+			new_width = int(new_height * old_width / old_height)
+
+		print(bcolors.OKGREEN + "Old size: " + bcolors.WARNING + str((old_width, old_height)) + bcolors.ENDC)
+		print(bcolors.OKGREEN + "New size: " + bcolors.WARNING + str((new_width, new_height)) + bcolors.ENDC)
 	except IOError:
 		print("Cant load"), infile
 		sys.exit(1)
@@ -36,23 +68,20 @@ def get_images_array(full_name):
 				# the next line possibly helps, but it breaks the output right now
 				# image.putpalette(mypalette)
 
-				# non_transparent = Image.new("RGBA", image.size, (255, 255, 255, 255))
-				# non_transparent.paste(image, (0, 0), image)
-				# new_image.save('output-images/' + str(i) + '.png')
-
-				new_image = image.convert('RGBA')
+				new_image = old_image.convert('RGBA')
+				new_image = new_image.resize((new_width, new_height), Image.ANTIALIAS)
 				if outputImages:
 					new_image.save('output-images/' + str(i) + '.png')
 
 				new_images.append(new_image)
 
 				i += 1
-				image.seek(image.tell() + 1) # image now holds the next frame
+				old_image.seek(old_image.tell() + 1) # image now holds the next frame
 
 		except EOFError:
 			return new_images # return array
 	elif extension == "jpeg":
-		new_image = image.convert('RGB')
+		new_image = old_image.convert('RGB')
 		name = full_name.split(".", 1)[0] # get the name before the "." by taking the first element
 		new_image.save('output-images/' + name + '.jpeg')
 		return [non_transparent] # return the image output in an array
@@ -165,13 +194,4 @@ for name in names:
 precision = 10 ** 3
 elapsedTime = int((time.time() - startTime) * precision) / precision
 
-class bcolors:
-	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKGREEN = '\033[92m'
-	WARNING = '\033[93m'
-	FAIL = '\033[91m'
-	ENDC = '\033[0m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
 print(bcolors.OKGREEN + "Elapsed time:", bcolors.WARNING + str(elapsedTime) + " seconds." + bcolors.ENDC)
