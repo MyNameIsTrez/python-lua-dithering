@@ -4,9 +4,9 @@ import os
 import sys
 import time
 from PIL import Image
-from copy import copy, deepcopy
+import cv2
 
-import dithering # should be placed in the same folder as this program
+import dithering # made by me. should be placed in the same folder as this program
 
 ## COLORING TERMINAL OUTPUT TEXT ####################
 
@@ -25,6 +25,7 @@ class bcolors:
 computer_type = "desktop" # "laptop" or "desktop".
 new_width_stretched = True
 output_images = False
+sleep = 2 # how often an image is taken from an mp4. set to 1/60 for 60 fps animation
 
 # see tekkit/config/mod_ComputerCraft.cfg
 if computer_type == "laptop":
@@ -38,6 +39,41 @@ else:
 
 ## FUNCTIONS ####################
 
+def getFrame(sec, video):
+	video.set(cv2.CAP_PROP_POS_MSEC, sec * 1000)
+	hasFrames, cv2_im = video.read()
+	if hasFrames:
+		cv2_im = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB) # is this necessary?
+		pil_im = Image.fromarray(cv2_im)
+		return pil_im
+	return hasFrames
+
+def getFrames(infile):
+	video = cv2.VideoCapture(infile)
+	frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) # inaccurate, but fast
+	fps = video.get(cv2.CAP_PROP_FPS)
+	sec = 0
+	count = 1
+	frames = []
+	while True:
+		result = getFrame(sec, video)
+		if result == False:
+			video.release()
+			return frames
+		frames.append(result)
+		print(bcolors.OKBLUE + "Gotten frames: " + bcolors.HEADER + str(len(frames) * fps * sleep) + "/" + str(frame_count) + bcolors.ENDC, end = "\r", flush = True)
+
+		count = count + 1
+		sec = sec + sleep
+		sec = round(sec, 2)
+
+def get_new_image(old_image, new_width, new_height, output_images, name, index):
+	new_image = old_image.convert("RGBA")
+	new_image = new_image.resize((new_width, new_height), Image.ANTIALIAS)
+	if output_images:
+		new_image.save("output images/" + name + " " + str(index) + ".png")
+	return new_image
+
 def get_images_array(full_name):
 	infile = "inputs/" + full_name
 	extension = full_name.split(".", 1)[1] # get the extension after the "."
@@ -45,8 +81,12 @@ def get_images_array(full_name):
 	print(bcolors.OKBLUE + "Name: " + bcolors.HEADER + name + bcolors.ENDC)
 
 	try:
-		old_image = Image.open(infile) # image holds all frames, but can be treated as frame 0 at the start
-
+		if extension == "mp4":
+			old_images = getFrames(infile)
+			old_image = old_images[0]
+		else:
+			old_image = Image.open(infile) # image holds all frames, but can be treated as frame 0 at the start
+		
 		old_width = old_image.size[0]
 		old_height = old_image.size[1]
 
@@ -58,17 +98,17 @@ def get_images_array(full_name):
 		else:
 			new_width = int(new_height * old_width / old_height)
 
-		print(bcolors.OKGREEN + "	Old size: " + bcolors.WARNING + str(old_width) + " x " + str(old_height) + bcolors.ENDC)
+		print("\n" + bcolors.OKGREEN + "	Old size: " + bcolors.WARNING + str(old_width) + " x " + str(old_height) + bcolors.ENDC)
 		print(bcolors.OKGREEN + "	New size: " + bcolors.WARNING + str(new_width) + " x " + str(new_height) + bcolors.ENDC)
 	except IOError:
 		print("Cant load"), infile
 		sys.exit(1)
 
+	new_images = []
+
 	if extension == "gif":
 		# the next line possibly helps, but it breaks the output right now, see the next comment
 		# mypalette = image.getpalette()
-
-		new_images = []
 
 		try:
 			i = 0
@@ -76,21 +116,24 @@ def get_images_array(full_name):
 				# the next line possibly helps, but it breaks the output right now
 				# image.putpalette(mypalette)
 
-				new_image = old_image.convert("RGBA")
-				new_image = new_image.resize((new_width, new_height), Image.ANTIALIAS)
-				if output_images:
-					new_image.save("output-images/" + str(i) + ".png")
-
+				new_image = get_new_image(old_image, new_width, new_height, output_images, name, i)
 				new_images.append(new_image)
 
 				i += 1
 				old_image.seek(old_image.tell() + 1) # image now holds the next frame
-
 		except EOFError:
 			return new_images # return array
+	elif extension == "mp4":
+		for index, old_image in enumerate(old_images):
+			print(bcolors.OKBLUE + "Resized frames: " + bcolors.HEADER + str(index) + "/" + str(len(old_images)) + bcolors.ENDC, end = "\r", flush = True)
+			new_image = get_new_image(old_image, new_width, new_height, output_images, name, index)
+			new_images.append(new_image)
+		print("\n") # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
+		return new_images
 	elif extension == "jpeg":
 		new_image = old_image.convert("RGB")
-		new_image.save("output-images/" + name + ".jpeg")
+		if output_images:
+			new_image.save("output images/" + name + ".jpeg")
 		return [non_transparent] # return the image output in an array
 
 def get_brightness(tup):
@@ -107,8 +150,20 @@ def media_convert_to_chars(full_name, imgs):
 
 	width, height = imgs[0].size
 
+	print(bcolors.OKBLUE + "Creating initial character frame..." + bcolors.ENDC)
+	initial_frame = []
+	pix = imgs[0].load()
+	for x in range(width):
+		initial_frame.append([])
+		for y in range(height):
+			brightness = get_brightness(pix[x, y])
+			brightness = round(brightness * 100) / 100
+			char = dithering.getClosestChar(brightness)
+			initial_frame[x].append(char)
+
 	frameCount = len(imgs)
 	for f in range(frameCount):
+		print(bcolors.OKBLUE + "Creating optimized character frames: " + bcolors.HEADER + str(f) + "/" + str(frameCount) + bcolors.ENDC, end = "\r", flush = True)
 		img = imgs[f]
 		pix = img.load()
 
@@ -117,7 +172,6 @@ def media_convert_to_chars(full_name, imgs):
 		for x in range(width):
 			real_frames[f].append([])
 			optimized_frames[f].append([])
-
 			for y in range(height):
 				brightness = get_brightness(pix[x, y])
 				brightness = round(brightness * 100) / 100
@@ -134,12 +188,9 @@ def media_convert_to_chars(full_name, imgs):
 					optimized_frames[f][x].append(char)
 				else:
 					char = dithering.getClosestChar(brightness)
-					optimized_frames[f][x].append(char) # necessary to create initial_frame, and for the 2nd frame
-	
-	# get the initiallly drawn frame, that doesn't get drawn after each loop
-	initial_frame = deepcopy(optimized_frames)[0]
+					optimized_frames[f][x].append(char)
 
-	# I SUSPECT THIS CODE CAUSES THE LAST FRAME TO NOT BE CLEARED COMPLETELY FOR SOME REASON!!!
+	# I SUSPECT THIS CODE CAUSES THE LAST FRAME TO NOT BE CLEARED COMPLETELY, FOR SOME REASON!!!
 	for x in range(width):
 		for y in range(height):
 			# sets the first frame character position to "t", if the last frame's equal character position is the same character
@@ -154,6 +205,8 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 	
 	initial_frame_list = []
 	# add all strings in initial_frame to stringList
+	print("\n") # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
+	print(bcolors.OKBLUE + "Saving initial frame to one string..." + bcolors.ENDC)
 	for x in range(width):
 		for y in range(height):
 			s = initial_frame[x][y]
@@ -162,6 +215,7 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 	optimized_frames_list = []
 	# add all strings in optimized_frames to stringList
 	for f in range(frameCount):
+		print(bcolors.OKBLUE + "Saving frames to one string: " + bcolors.HEADER + str(f) + "/" + str(frameCount) + bcolors.ENDC, end = "\r", flush = True)
 		for x in range(width):
 			for y in range(height):
 				s = optimized_frames[f][x][y]
@@ -186,6 +240,8 @@ def save_string(full_name, width, height, initial_frame, optimized_frames, frame
 	string = string.replace(", 'initial_frame': ", ",initial_frame=")
 	string = string.replace(", 'optimized_frames': ", ",optimized_frames=")
 	
+	print("\n") # needed to escape the previous print statement, but this causes an empty line to appear in the terminal
+	print(bcolors.OKBLUE + "Writing the string to a file..." + bcolors.ENDC)
 	result_file.write(string)
 
 	result_file.close()
