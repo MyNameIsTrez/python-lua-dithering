@@ -1,1 +1,0 @@
-{width=425,height=160,frame_count=25,optimized_frames='
