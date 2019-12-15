@@ -66,10 +66,10 @@ def process_frames(full_file_name, computer_type):
 				string = '\',initial_frame=\''
 				output_file.write(string)
 				
-				string = '\',frame_count={}}'.format(frame_count)
+				string = '\',frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
 				output_file.write(string)
 				print()
-			elif extension == 'gif' or extension == 'jpeg':				
+			elif extension == 'gif' or extension == 'jpeg':
 				if extension == 'gif':
 					# mypalette = image.getpalette() # possibly helps
 					try:
@@ -110,16 +110,18 @@ def process_frame(frame, i, last_string, new_width, new_height, output_file, fra
 		for y in range(new_height):
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
-			if last_string == None or char != last_string[y + x * 160]:
+			if last_string == None or char != last_string[y + x * new_height]:
 				string = string+char
 			else:
 				string = string+'t'
 	
 	last_string = string
 	output_file.write(string)
-	progress = 'Frame '+str(i)
+	progress = 'Frame '+str(i+1)+'/'
 	if frame_count:
-		progress = progress+'/'+str(frame_count)
+		progress = progress+str(frame_count)
+	else:
+		progress = progress+'?'
 	i = i + 1
 	speed = str(round(time.time()-t1, 2)) + 's/frame'
 	print('    '+progress+', '+speed, end='\r', flush=True)
@@ -137,10 +139,18 @@ def get_brightness(tup):
 t0 = time.time()
 
 # user settings
-computer_type = 'desktop'
+computer_type = 'laptop'
 new_width_stretched = True
-max_width = 426
-max_height = 160
+
+# see tekkit/config/mod_ComputerCraft.cfg
+if computer_type == "laptop":
+	max_width = 227
+	max_height = 85
+elif computer_type == "desktop":
+	max_width = 426
+	max_height = 160
+else:
+	print(bcolors.FAIL + "You didn't enter a valid 'computer_type' name!" + bcolors.ENDC)
 
 names = os.listdir('inputs')
 for name in names:
