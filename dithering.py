@@ -40,6 +40,8 @@ def getHighestIndex():
 			highestIndex = index
 	return highestIndex
 
+highestIndex = getHighestIndex()
+
 def getClosestIndex(floatIndex):
 	keys = list(brightnessChars)
 	firstIndex = keys[0]
@@ -69,7 +71,7 @@ def getClosestChar(n):
 	if n < 0 or n > 1:
 		raise invalidInput("getClosestChar expected a float between 0 and 1, both inclusive")
 	
-	floatIndex = n * getHighestIndex()
+	floatIndex = n * highestIndex
 	closestIndex = getClosestIndex(floatIndex)
 	closestCharTable = brightnessChars[closestIndex]
 	return closestCharTable[0] # For now, we always give the first character of the index its table.
