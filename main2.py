@@ -38,7 +38,7 @@ def process_frames(full_file_name, computer_type):
 				new_width = int(new_height * old_width / old_height)
 			
 			# prepare output file for writing data
-			string = '{width='+'{},height={},optimized_frames=\''.format(new_width, new_height)
+			string = '{width='+'{},height={},optimized_frames="'.format(new_width, new_height)
 			output_file.write(string)
 
 			last_string = None
@@ -63,10 +63,10 @@ def process_frames(full_file_name, computer_type):
 						video.release()
 						break
 				
-				string = '\',initial_frame=\''
+				string = '",initial_frame="'
 				output_file.write(string)
 				
-				string = '\',frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
+				string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
 				output_file.write(string)
 				print()
 			elif extension == 'gif' or extension == 'jpeg':
@@ -86,11 +86,11 @@ def process_frames(full_file_name, computer_type):
 					new_image = new_image.convert('RGB')
 					process_frame(new_image, i, last_string, new_width, new_height, output_file, 1)
 				
-				string = '\',initial_frame=\''
+				string = '",initial_frame="'
 				output_file.write(string)
 				
 				frame_count = i # check if this doesn't cause an off-by-one error
-				string = '\',frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
+				string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
 				output_file.write(string)
 				print()
 				# print(('It took {} frames to process this '+extension+'.').format(frame_count))
@@ -143,14 +143,14 @@ computer_type = 'laptop'
 new_width_stretched = True
 
 # see tekkit/config/mod_ComputerCraft.cfg
-if computer_type == "laptop":
+if computer_type == 'laptop':
 	max_width = 227
 	max_height = 85
-elif computer_type == "desktop":
+elif computer_type == 'desktop':
 	max_width = 426
 	max_height = 160
 else:
-	print(bcolors.FAIL + "You didn't enter a valid 'computer_type' name!" + bcolors.ENDC)
+	print(bcolors.FAIL + 'You didn\'t enter a valid \'computer_type\' name!' + bcolors.ENDC)
 
 names = os.listdir('inputs')
 for name in names:
