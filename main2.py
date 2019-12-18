@@ -33,7 +33,7 @@ def process_frames(full_file_name, computer_type):
 			# get the new image width
 			new_height = max_height
 			if new_width_stretched:
-				new_width = max_width - 1 # the CC config's terminal_width variable has to be subtracted by 1
+				new_width = max_width
 			else:
 				new_width = int(new_height * old_width / old_height)
 			
@@ -41,7 +41,6 @@ def process_frames(full_file_name, computer_type):
 			string = '{width='+'{},height={},optimized_frames="'.format(new_width, new_height)
 			output_file.write(string)
 
-			last_string = None
 			i = 0
 			
 			if extension == 'mp4':
@@ -56,7 +55,7 @@ def process_frames(full_file_name, computer_type):
 						# resize the image to the desired width and height
 						pil_frame = pil_frame.resize((new_width, new_height), Image.ANTIALIAS)
 						
-						last_string = process_frame(pil_frame, i, last_string, new_width, new_height, output_file, frame_count)
+						process_frame(pil_frame, i, new_width, new_height, output_file, frame_count)
 						
 						i = i + 1
 					else:
@@ -76,20 +75,20 @@ def process_frames(full_file_name, computer_type):
 						while 1:
 							# image.putpalette(mypalette) # possibly helps
 							new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
-							last_string = process_frame(new_image, i, last_string, new_width, new_height, output_file, None)
+							process_frame(new_image, i, new_width, new_height, output_file, None)
 							old_image.seek(old_image.tell() + 1) # gets the next frame
 							i = i + 1
 					except:
-						1 # continue
+						frame_count = i # continue
 				elif extension == 'jpeg':
 					new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
 					new_image = new_image.convert('RGB')
-					process_frame(new_image, i, last_string, new_width, new_height, output_file, 1)
+					process_frame(new_image, i, new_width, new_height, output_file, 1)
+					frame_count = 1
 				
 				string = '",initial_frame="'
 				output_file.write(string)
 				
-				frame_count = i # check if this doesn't cause an off-by-one error
 				string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
 				output_file.write(string)
 				print()
@@ -100,22 +99,25 @@ def process_frames(full_file_name, computer_type):
 	else:
 		print('Skipping \''+file_name+'\'.')
 
-def process_frame(frame, i, last_string, new_width, new_height, output_file, frame_count):
+def process_frame(frame, i, new_width, new_height, output_file, frame_count):
 	t1 = time.time()
 	frame = frame.convert('RGBA')
 	frame_pixels = frame.load()
 	
 	string = ''
-	for x in range(new_width):
-		for y in range(new_height):
+	for y in range(new_height):
+		string=string+"|"
+		for x in range(1, new_width-1):
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
-			if last_string == None or char != last_string[y + x * new_height]:
-				string = string+char
-			else:
-				string = string+'t'
+
+            # I'd love to use spaces, but it messes ComputerCraft's terminal up for some reason.
+			if (char == " "):
+				char = "."
+            
+			string = string+char
+		string=string+"|"
 	
-	last_string = string
 	output_file.write(string)
 	progress = 'Frame '+str(i+1)+'/'
 	if frame_count:
@@ -125,7 +127,6 @@ def process_frame(frame, i, last_string, new_width, new_height, output_file, fra
 	i = i + 1
 	speed = '{:.2f}s/frame'.format(time.time()-t1)
 	print('    '+progress+', '+speed, end='\r', flush=True)
-	return last_string
 
 def get_brightness(tup):
 	# red, green and blue aren't equally bright
