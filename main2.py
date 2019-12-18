@@ -123,9 +123,8 @@ def process_frame(frame, i, last_string, new_width, new_height, output_file, fra
 	else:
 		progress = progress+'?'
 	i = i + 1
-	speed = str(round(time.time()-t1, 2)) + 's/frame'
+	speed = '{:.2f}s/frame'.format(time.time()-t1)
 	print('    '+progress+', '+speed, end='\r', flush=True)
-	# print()
 	return last_string
 
 def get_brightness(tup):
@@ -157,4 +156,4 @@ for name in names:
 	process_frames(name, computer_type)
 
 d = time.time() - t0
-print ('Duration: %.2fs.' % d)
+print('Duration: {:.2f}s.'.format(d))
