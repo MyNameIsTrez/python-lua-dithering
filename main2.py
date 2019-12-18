@@ -1,5 +1,6 @@
 import os
 import time
+from math import floor
 import cv2
 from PIL import Image
 import dithering
@@ -101,32 +102,43 @@ def process_frames(full_file_name, computer_type):
 
 def process_frame(frame, i, new_width, new_height, output_file, frame_count):
 	t1 = time.time()
+	
+	# return to skip this frame
+	if i % frame_skipping != 0:
+		return
+	
 	frame = frame.convert('RGBA')
 	frame_pixels = frame.load()
 	
 	string = ''
 	for y in range(new_height):
-		string=string+"|"
-		for x in range(1, new_width-1):
+		# string=string+"|" # probably wanted when you include spaces, but I couldn't get this to work
+		for x in range(new_width):
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
 
-            # I'd love to use spaces, but it messes ComputerCraft's terminal up for some reason.
+			# I'd love to use spaces, but it messes ComputerCraft's terminal up for some reason
 			if (char == " "):
 				char = "."
-            
+			
 			string = string+char
-		string=string+"|"
+		# string=string+"|"
 	
 	output_file.write(string)
+	current_frame = i+1
 	progress = 'Frame '+str(i+1)+'/'
 	if frame_count:
 		progress = progress+str(frame_count)
 	else:
 		progress = progress+'?'
 	i = i + 1
-	speed = '{:.2f}s/frame'.format(time.time()-t1)
-	print('    '+progress+', '+speed, end='\r', flush=True)
+	elapsed = time.time()-t1
+	speed = '{:.2f}s/frame'.format(elapsed)
+	frames_left = (frame_count - current_frame) / frame_skipping
+	eta_minutes = floor(elapsed * frames_left / 60)
+	eta_seconds = floor(elapsed * frames_left) % 60
+	eta = '{}m, {}s left'.format(eta_minutes, eta_seconds)
+	print('    '+progress+', '+speed+', '+eta, end='\r', flush=True)
 
 def get_brightness(tup):
 	# red, green and blue aren't equally bright
@@ -139,8 +151,9 @@ def get_brightness(tup):
 t0 = time.time()
 
 # user settings
-computer_type = 'laptop'
+computer_type = 'desktop'
 new_width_stretched = True
+frame_skipping = 7 # 1 means every frame is kept, 3 means every third frame is kept, etc.
 
 # see tekkit/config/mod_ComputerCraft.cfg
 if computer_type == 'laptop':
@@ -157,4 +170,8 @@ for name in names:
 	process_frames(name, computer_type)
 
 d = time.time() - t0
-print('Duration: {:.2f}s.'.format(d))
+
+minutes = floor(d / 60)
+seconds = d % 60
+
+print('Duration: {}m, {:.2f}s.'.format(minutes, seconds))
