@@ -62,13 +62,6 @@ def process_frames(full_file_name, computer_type):
 					else:
 						video.release()
 						break
-				
-				string = '",initial_frame="'
-				output_file.write(string)
-				
-				string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
-				output_file.write(string)
-				print()
 			elif extension == 'gif' or extension == 'jpeg':
 				if extension == 'gif':
 					# mypalette = image.getpalette() # possibly helps
@@ -86,16 +79,16 @@ def process_frames(full_file_name, computer_type):
 					new_image = new_image.convert('RGB')
 					process_frame(new_image, i, new_width, new_height, output_file, 1)
 					frame_count = 1
-				
-				string = '",initial_frame="'
-				output_file.write(string)
-				
-				string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
-				output_file.write(string)
-				print()
-				# print(('It took {} frames to process this '+extension+'.').format(frame_count))
 			else:
 				print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
+			
+			string = '",frame_sleep=' + str(frame_sleep) # -1 is no sleeping
+			output_file.write(string)
+			
+			string = ',frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
+			output_file.write(string)
+			print()
+
 			output_file.close()
 	else:
 		print('Skipping \''+file_name+'\'.')
@@ -151,9 +144,14 @@ def get_brightness(tup):
 t0 = time.time()
 
 # user settings
-computer_type = 'desktop'
+computer_type = 'laptop'
 new_width_stretched = True
-frame_skipping = 7 # 1 means every frame is kept, 3 means every third frame is kept, etc.
+
+# 1 means every frame is kept, 3 means every third frame is kept.
+# this is a file compression method
+frame_skipping = 2
+
+frame_sleep = 0.1 # seconds of sleeping between frames, -1 is no sleeping
 
 # see tekkit/config/mod_ComputerCraft.cfg
 if computer_type == 'laptop':
