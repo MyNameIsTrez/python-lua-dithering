@@ -11,87 +11,80 @@ def process_frames(full_file_name, computer_type):
 	input_path = 'inputs/'+full_file_name
 	output_path = computer_type+' outputs/'+file_name+'.txt'
 	
-	if not os.path.isfile(output_path): # COMMENT THIS BACK IN WHEN DONE WITH TESTING
-		with open(output_path, 'a') as output_file:
-			print('Processing \''+file_name+'\'.')
+	with open(output_path, 'w') as output_file:
+		print('Processing \''+file_name+'\'.')
 
-			if extension == 'mp4':
-				# get information about the video file
-				video = cv2.VideoCapture(input_path)
-				old_width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
-				old_height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
-			elif extension == 'gif' or extension == 'jpeg':
-				try:
-					old_image = Image.open(input_path)
-					old_width = old_image.size[0]
-					old_height = old_image.size[1]
-				except IOError:
-					print('Can\'t load \''+file_name+'\'.'), infile
-					sys.exit(1)
-			else:
-				print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
+		if extension == 'mp4':
+			# get information about the video file
+			video = cv2.VideoCapture(input_path)
+			old_width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
+			old_height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+		elif extension == 'gif' or extension == 'jpeg':
+			try:
+				old_image = Image.open(input_path)
+				old_width = old_image.size[0]
+				old_height = old_image.size[1]
+			except IOError:
+				print('Can\'t load \''+file_name+'\'.'), infile
+				sys.exit(1)
+		else:
+			print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
 
-			# get the new image width
-			new_height = max_height
-			if new_width_stretched:
-				new_width = max_width
-			else:
-				new_width = int(new_height * old_width / old_height)
-			
-			# prepare output file for writing data
-			string = '{width='+'{},height={},optimized_frames="'.format(new_width, new_height)
-			output_file.write(string)
+		# get the new image width
+		new_height = max_height
+		if new_width_stretched:
+			new_width = max_width
+		else:
+			new_width = int(new_height * old_width / old_height)
+		
+		# prepare output file for writing data
+		string = '{width='+'{},height={},optimized_frames="'.format(new_width, new_height)
+		output_file.write(string)
 
-			i = 0
-			
-			if extension == 'mp4':
-				while True:
-					hasFrames, cv2_frame = video.read()
-					frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) # inaccurate, but fast
-					if hasFrames:
-						cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB) # is this necessary?
-						pil_frame = Image.fromarray(cv2_frame)
-						pil_frame = pil_frame.convert('RGBA')
-						
-						# resize the image to the desired width and height
-						pil_frame = pil_frame.resize((new_width, new_height), Image.ANTIALIAS)
-						
-						process_frame(pil_frame, i, new_width, new_height, output_file, frame_count)
-						
-						i = i + 1
-					else:
-						video.release()
-						break
-			elif extension == 'gif' or extension == 'jpeg':
-				if extension == 'gif':
-					# mypalette = image.getpalette() # possibly helps
-					try:
-						while 1:
-							# image.putpalette(mypalette) # possibly helps
-							new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
-							process_frame(new_image, i, new_width, new_height, output_file, None)
-							old_image.seek(old_image.tell() + 1) # gets the next frame
-							i = i + 1
-					except:
-						frame_count = i # continue
-				elif extension == 'jpeg':
+		i = 0
+		
+		if extension == 'mp4':
+			while True:
+				hasFrames, cv2_frame = video.read()
+				frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) # inaccurate, but fast
+				if hasFrames:
+					cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB) # is this necessary?
+					pil_frame = Image.fromarray(cv2_frame)
+					pil_frame = pil_frame.convert('RGBA')
+					
+					# resize the image to the desired width and height
+					pil_frame = pil_frame.resize((new_width, new_height), Image.ANTIALIAS)
+					
+					process_frame(pil_frame, i, new_width, new_height, output_file, frame_count)
+					
+					i = i + 1
+				else:
+					video.release()
+					break
+		elif extension == 'gif':
+			# mypalette = old_image.getpalette() # possibly helps
+			try:
+				while 1:
+					# old_image.putpalette(mypalette) # possibly helps
 					new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
-					new_image = new_image.convert('RGB')
-					process_frame(new_image, i, new_width, new_height, output_file, 1)
-					frame_count = 1
-			else:
-				print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
-			
-			string = '",frame_sleep=' + str(frame_sleep) # -1 is no sleeping
-			output_file.write(string)
-			
-			string = ',frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
-			output_file.write(string)
-			print()
+					process_frame(new_image, i, new_width, new_height, output_file, None)
+					old_image.seek(old_image.tell() + 1) # gets the next frame
+					i = i + 1
+			except:
+				frame_count = i # continue
+		elif extension == 'jpeg':
+			new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
+			new_image = new_image.convert('RGB')
+			process_frame(new_image, i, new_width, new_height, output_file, 1)
+			frame_count = 1
+		else:
+			print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
+		
+		string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
+		output_file.write(string)
+		print()
 
-			output_file.close()
-	else:
-		print('Skipping \''+file_name+'\'.')
+		output_file.close()
 
 def process_frame(frame, i, new_width, new_height, output_file, frame_count):
 	t1 = time.time()
@@ -127,10 +120,13 @@ def process_frame(frame, i, new_width, new_height, output_file, frame_count):
 	i = i + 1
 	elapsed = time.time()-t1
 	speed = '{:.2f}s/frame'.format(elapsed)
-	frames_left = (frame_count - current_frame) / frame_skipping
-	eta_minutes = floor(elapsed * frames_left / 60)
-	eta_seconds = floor(elapsed * frames_left) % 60
-	eta = '{}m, {}s left'.format(eta_minutes, eta_seconds)
+	if (frame_count):
+		frames_left = (frame_count - current_frame) / frame_skipping
+		eta_minutes = floor(elapsed * frames_left / 60)
+		eta_seconds = floor(elapsed * frames_left) % 60
+		eta = '{}m, {}s left'.format(eta_minutes, eta_seconds)
+	else:
+		eta = '?'
 	print('    '+progress+', '+speed+', '+eta, end='\r', flush=True)
 
 def get_brightness(tup):
@@ -149,9 +145,7 @@ new_width_stretched = True
 
 # 1 means every frame is kept, 3 means every third frame is kept.
 # this is a file compression method
-frame_skipping = 2
-
-frame_sleep = 0.1 # seconds of sleeping between frames, -1 is no sleeping
+frame_skipping = 1
 
 # see tekkit/config/mod_ComputerCraft.cfg
 if computer_type == 'laptop':
@@ -166,6 +160,8 @@ else:
 names = os.listdir('inputs')
 for name in names:
 	process_frames(name, computer_type)
+	# moving file
+	os.rename('inputs/' + name, 'temp inputs/' + name)
 
 d = time.time() - t0
 
