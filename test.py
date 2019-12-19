@@ -1,1 +1,0 @@
-print("{:.2f}".format(1))
