@@ -38,7 +38,7 @@ def process_frames(full_file_name, computer_type):
 			new_width = int(new_height * old_width / old_height)
 		
 		# prepare output file for writing data
-		string = '{width='+'{},height={},optimized_frames="'.format(new_width, new_height)
+		string = '{width='+'{},height={},optimized_frames={{'.format(new_width, new_height)
 		output_file.write(string)
 
 		i = 0
@@ -80,7 +80,7 @@ def process_frames(full_file_name, computer_type):
 		else:
 			print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
 		
-		string = '",frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
+		string = '}},frame_count={}}}'.format(frame_count) # '}}' necessary, because you get a 'ValueError' with '}'
 		output_file.write(string)
 		print()
 
@@ -96,21 +96,49 @@ def process_frame(frame, i, new_width, new_height, output_file, frame_count):
 	frame = frame.convert('RGBA')
 	frame_pixels = frame.load()
 	
+	prev_char = None
+	prev_char_count = 0
 	string = ''
 	for y in range(new_height):
-		# string=string+"|" # probably wanted when you include spaces, but I couldn't get this to work
+		# probably wanted when you include spaces, but I couldn't get using spaces to work
+		# string=string+"|"
+
 		for x in range(new_width):
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
 
 			# I'd love to use spaces, but it messes ComputerCraft's terminal up for some reason
-			if (char == " "):
+			if char == " ":
 				char = "."
 			
-			string = string+char
+			# if this is the final char
+			final_char = y == new_height-1 and x == new_width-1
+			
+			if char == prev_char and not final_char:
+				prev_char_count += 1
+			else:
+				# if the final char is equal to the previous char
+				if final_char and char == prev_char:
+					prev_char_count += 1
+				
+				# add the previous chars
+				if prev_char_count > 5:
+					string += '[' + str(prev_char_count) + ';' + prev_char + ']'
+				else:
+					string += str(prev_char) * prev_char_count
+				
+				# if the final char isn't equal to the previous char
+				if final_char and char != prev_char:
+					# concatenate the final char
+					string += char
+				
+				prev_char_count = 1
+				prev_char = char
+					
+
 		# string=string+"|"
 	
-	output_file.write(string)
+	output_file.write('"' + string + '",')
 	current_frame = i+1
 	progress = 'Frame '+str(i+1)+'/'
 	if frame_count:
@@ -120,13 +148,13 @@ def process_frame(frame, i, new_width, new_height, output_file, frame_count):
 	i = i + 1
 	elapsed = time.time()-t1
 	speed = '{:.2f}s/frame'.format(elapsed)
-	if (frame_count):
+	if frame_count:
 		frames_left = (frame_count - current_frame) / frame_skipping
 		eta_minutes = floor(elapsed * frames_left / 60)
 		eta_seconds = floor(elapsed * frames_left) % 60
 		eta = '{}m, {}s left'.format(eta_minutes, eta_seconds)
 	else:
-		eta = '?'
+		eta = '? left'
 	print('    '+progress+', '+speed+', '+eta, end='\r', flush=True)
 
 def get_brightness(tup):
@@ -145,7 +173,7 @@ new_width_stretched = True
 
 # 1 means every frame is kept, 3 means every third frame is kept.
 # this is a file compression method
-frame_skipping = 1
+frame_skipping = 2
 
 # see tekkit/config/mod_ComputerCraft.cfg
 if computer_type == 'laptop':
@@ -155,7 +183,7 @@ elif computer_type == 'desktop':
 	max_width = 426
 	max_height = 160
 else:
-	print(bcolors.FAIL + 'You didn\'t enter a valid \'computer_type\' name!' + bcolors.ENDC)
+	print('You didn\'t enter a valid \'computer_type\' name!')
 
 names = os.listdir('inputs')
 for name in names:
@@ -168,4 +196,4 @@ d = time.time() - t0
 minutes = floor(d / 60)
 seconds = d % 60
 
-print('Duration: {}m, {:.2f}s.'.format(minutes, seconds))
+print('Done! Duration: {}m, {:.2f}s.'.format(minutes, seconds))
