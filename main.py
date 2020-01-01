@@ -198,7 +198,7 @@ new_width_stretched = True
 
 # 1 means every frame is kept, 3 means every third frame is kept.
 # this is a file compression method
-frame_skipping = 4
+frame_skipping = 1
 
 # see tekkit/config/mod_ComputerCraft.cfg
 if computer_type == 'laptop':
