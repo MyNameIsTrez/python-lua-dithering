@@ -110,22 +110,17 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 	prev_char = None
 	prev_char_count = 0
 	string = ''
-	for y in range(new_height):
-		# probably wanted when you include spaces, but I couldn't get using spaces to work
-		# string=string+"|"
 
-		for x in range(new_width):
+	modified_width = new_width - 0
+	for y in range(new_height):
+		for x in range(modified_width):
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
 
-			# I'd love to use spaces, but it messes ComputerCraft's terminal up for some reason
-			if char == " ":
-				char = "."
-
 			# if this is the final char
-			final_char = y == new_height - 1 and x == new_width - 1
+			final_char = (y == new_height - 1 and x == new_width - 1)
 
-			if char == prev_char and not final_char:
+			if char == prev_char and not final_char and char != ' ':
 				prev_char_count += 1
 			else:
 				# if the final char is equal to the previous char
@@ -146,7 +141,9 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 				prev_char_count = 1
 				prev_char = char
 
-		# string=string+"|"
+		if y < new_height - 1:
+			string += '\\'
+			string += '\\n'
 
 	# progress
 	output_file.write('"' + string + '",')
