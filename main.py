@@ -20,7 +20,7 @@ def process_frames(full_file_name, computer_type):
 			video = cv2.VideoCapture(input_path)
 			old_width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
 			old_height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
-		elif extension == 'gif' or extension == 'jpeg' or extension == 'png':
+		elif extension == 'gif' or extension == 'jpeg' or extension == 'png' or extension == 'jpg':
 			try:
 				old_image = Image.open(input_path)
 				old_width = old_image.size[0]
@@ -28,7 +28,7 @@ def process_frames(full_file_name, computer_type):
 			except IOError:
 				print('Can\'t load \'' + file_name + '\'!')
 		else:
-			print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
+			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
 		# get the new image width
 		new_height = max_height
@@ -83,7 +83,7 @@ def process_frames(full_file_name, computer_type):
 					i += 1
 			except:
 				frame_count = i  # continue
-		elif extension == 'jpeg' or extension == 'png':
+		elif extension == 'jpeg' or extension == 'png' or extension == 'jpg':
 			new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
 			# new_image = new_image.convert('RGB')
 			process_frame(new_image, used_frame_count,
@@ -91,7 +91,7 @@ def process_frames(full_file_name, computer_type):
 
 			used_frame_count = 1
 		else:
-			print('Entered an invalid file type; only mp4, gif and jpeg are allowed!')
+			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
 		# '}}' necessary, because you get a 'ValueError' with '}'
 		string = '}},frame_count={}}}'.format(used_frame_count)
@@ -118,21 +118,9 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
 
-			# if char == ' ':
-			# 	char = '.'
-
-			# if char == '.':
-			# 	char = ' '
-
 			final_line_char = (x == modified_width - 1)
 
-			# if final_line_char:
-			# 	print(final_line_char)
-
 			final_frame_char = (y == new_height - 1 and x == new_width - 1 - 0)
-
-			# if (final_frame_char):
-			# 	print(final_frame_char)
 
 			if char == prev_char and not final_frame_char and not final_line_char:
 				prev_char_count += 1
@@ -148,7 +136,7 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 					string += str(prev_char) * prev_char_count
 
 				# if the final char isn't equal to the previous char
-				if final_frame_char and char != prev_char:
+				if (final_frame_char or final_line_char) and char != prev_char:
 					# concatenate the final char
 					string += char
 
@@ -218,7 +206,7 @@ if computer_type == 'laptop':
 	max_height = 85
 elif computer_type == 'desktop':
 	max_width = 426
-	max_height = 80  # 160
+	max_height = 160
 else:
 	print('You didn\'t enter a valid \'computer_type\' name!')
 
