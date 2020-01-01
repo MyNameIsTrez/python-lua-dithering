@@ -111,25 +111,34 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 	prev_char_count = 0
 	string = ''
 
+	modified_width = new_width - 1
+
 	for y in range(new_height):
-		for x in range(new_width - 0):
+		for x in range(modified_width):
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
 
-			if char == ' ':
-				char = '.'
+			# if char == ' ':
+			# 	char = '.'
 
 			# if char == '.':
 			# 	char = ' '
 
-			# if this is the final char
-			final_char = (y == new_height - 1 and x == new_width - 1 - 0)
+			final_line_char = (x == modified_width - 1)
 
-			if char == prev_char and not final_char:
+			# if final_line_char:
+			# 	print(final_line_char)
+
+			final_frame_char = (y == new_height - 1 and x == new_width - 1 - 0)
+
+			# if (final_frame_char):
+			# 	print(final_frame_char)
+
+			if char == prev_char and not final_frame_char and not final_line_char:
 				prev_char_count += 1
 			else:
 				# if the final char is equal to the previous char
-				if final_char and char == prev_char:
+				if (final_frame_char or final_line_char) and char == prev_char:
 					prev_char_count += 1
 
 				# add the previous chars
@@ -139,16 +148,20 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 					string += str(prev_char) * prev_char_count
 
 				# if the final char isn't equal to the previous char
-				if final_char and char != prev_char:
+				if final_frame_char and char != prev_char:
 					# concatenate the final char
 					string += char
 
-				prev_char_count = 1
+				if not final_line_char:
+					prev_char_count = 1
+				else:
+					prev_char_count = 0
+
 				prev_char = char
 
-		# if y < new_height - 1:
-		# 	string += '\\'
-		# 	string += '\\n'
+		if y < new_height - 1:
+			string += '\\'
+			string += '\\n'
 
 	# progress
 	output_file.write('"' + string + '",')
