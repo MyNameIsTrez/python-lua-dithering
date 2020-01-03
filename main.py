@@ -10,7 +10,7 @@ def process_frames(full_file_name, computer_type):
 	extension = full_file_name.split('.', 1)[1]  # get the extension after the '.'
 	file_name = full_file_name.split('.', 1)[0]  # get the name before the '.'
 	input_path = 'inputs/' + full_file_name
-	output_path = computer_type + ' outputs/' + file_name + '.txt'
+	output_path = computer_type + ' outputs/' + file_name
 
 	with open(output_path, 'w') as output_file:
 		print('Processing \'' + file_name + '\'')
@@ -37,13 +37,8 @@ def process_frames(full_file_name, computer_type):
 		else:
 			new_width = int(new_height * old_width / old_height)
 
-		# prepare output file for writing data
-		string = '{width=' + \
-			'{},height={},optimized_frames={{'.format(new_width, new_height)
-		output_file.write(string)
-
 		i = 0
-		used_frame_count = 0
+		used_frame_count = 1
 		if extension == 'mp4':
 			# inaccurate, but fast
 			actual_frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -93,12 +88,17 @@ def process_frames(full_file_name, computer_type):
 		else:
 			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
-		# '}}' necessary, because you get a 'ValueError' with '}'
-		string = '}},frame_count={}}}'.format(used_frame_count)
+		# prepare output file for writing data
+		compressed_output_str = 'true' if compressed_output else 'false'
+		string = '\nframe_count=' + str(used_frame_count) + ',width=' + str(
+			new_width) + ',height=' + str(new_height) + ',compressed=' + compressed_output_str + ','
 		output_file.write(string)
 		print()
 
 		output_file.close()
+		renamed_output_path = output_path + \
+			' [' + str(used_frame_count) + ']' + '.txt'
+		os.rename(output_path, renamed_output_path)
 
 
 def process_frame(frame, used_frame_count, new_width, new_height, output_file, frame_count):
@@ -118,41 +118,45 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.getClosestChar(brightness)
 
-			final_line_char = (x == modified_width - 1)
+			if compressed_output:
+				final_line_char = (x == modified_width - 1)
 
-			final_frame_char = (y == new_height - 1 and x == new_width - 1 - 0)
+				final_frame_char = (y == new_height - 1 and x == new_width - 1 - 0)
 
-			if char == prev_char and not final_frame_char and not final_line_char:
-				prev_char_count += 1
-			else:
-				# if the final char is equal to the previous char
-				if (final_frame_char or final_line_char) and char == prev_char:
+				if char == prev_char and not final_frame_char and not final_line_char:
 					prev_char_count += 1
-
-				# add the previous chars
-				if prev_char_count > 5:
-					string += '[' + str(prev_char_count) + ';' + prev_char + ']'
 				else:
-					string += str(prev_char) * prev_char_count
+					# if the final char is equal to the previous char
+					if (final_frame_char or final_line_char) and char == prev_char:
+						prev_char_count += 1
 
-				# if the final char isn't equal to the previous char
-				if (final_frame_char or final_line_char) and char != prev_char:
-					# concatenate the final char
-					string += char
+					# add the previous chars
+					if prev_char_count > 5:
+						string += '[' + str(prev_char_count) + ';' + prev_char + ']'
+					else:
+						string += str(prev_char) * prev_char_count
 
-				if not final_line_char:
-					prev_char_count = 1
-				else:
-					prev_char_count = 0
+					# if the final char isn't equal to the previous char
+					if (final_frame_char or final_line_char) and char != prev_char:
+						# concatenate the final char
+						string += char
 
-				prev_char = char
+					if not final_line_char:
+						prev_char_count = 1
+					else:
+						prev_char_count = 0
+
+					prev_char = char
+			else:
+				string += char
 
 		if y < new_height - 1:
-			string += '\\'
 			string += '\\n'
 
+	# gives each frame its own line, so it can be easily found and parsed
+	output_file.write('\n' + string)
+
 	# progress
-	output_file.write('"' + string + '",')
 	current_frame = used_frame_count + 1
 	progress = 'Frame ' + str(current_frame) + '/'
 	if frame_count:
@@ -194,6 +198,7 @@ t0 = time.time()
 
 # user settings
 computer_type = 'desktop'
+compressed_output = False
 new_width_stretched = True
 
 # 1 means every frame is kept, 3 means every third frame is kept.
