@@ -38,7 +38,7 @@ def process_frames(full_file_name, computer_type):
 			new_width = int(new_height * old_width / old_height)
 
 		i = 0
-		used_frame_count = 1
+		used_frame_count = 0
 		if extension == 'mp4':
 			# inaccurate, but fast
 			actual_frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -53,12 +53,12 @@ def process_frames(full_file_name, computer_type):
 						pil_frame = Image.fromarray(cv2_frame)
 						pil_frame = pil_frame.convert('RGBA')
 
+						used_frame_count += 1
+
 						# resize the image to the desired width and height
 						pil_frame = pil_frame.resize((new_width, new_height), Image.ANTIALIAS)
 						process_frame(pil_frame, used_frame_count, new_width, new_height,
 						              output_file, frame_count)
-
-						used_frame_count += 1
 					i += 1
 				else:
 					video.release()
@@ -70,21 +70,23 @@ def process_frames(full_file_name, computer_type):
 					if i % frame_skipping == 0:
 						# old_image.putpalette(mypalette) # possibly helps
 						new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
+
+						used_frame_count += 1
+
 						process_frame(new_image, used_frame_count, new_width,
 						              new_height, output_file, None)
 						old_image.seek(old_image.tell() + 1)  # gets the next frame
-
-						used_frame_count += 1
 					i += 1
 			except:
 				frame_count = i  # continue
 		elif extension == 'jpeg' or extension == 'png' or extension == 'jpg':
 			new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
 			# new_image = new_image.convert('RGB')
+
+			used_frame_count += 1
+
 			process_frame(new_image, used_frame_count,
 			              new_width, new_height, output_file, 1)
-
-			used_frame_count = 1
 		else:
 			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
@@ -154,24 +156,30 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 			string += '\\n'
 
 	# gives each frame its own line, so it can be easily found and parsed
-	output_file.write('\n' + string)
+	if used_frame_count > 1:
+		final_string = '\n' + string
+	else:
+		final_string = string
+	output_file.write(final_string)
 
 	# progress
-	current_frame = used_frame_count + 1
-	progress = 'Frame ' + str(current_frame) + '/'
+	progress = 'Frame ' + str(used_frame_count) + '/'
 	if frame_count:
 		progress = progress + str(frame_count)
 	else:
-		progress = progress + '?'
+		progress = progress + '1000+'
 
 	# speed
 	elapsed = time.time() - t1
-	processed_fps = floor(1 / elapsed)
+	if elapsed > 0:
+		processed_fps = floor(1 / elapsed)
+	else:
+		processed_fps = '1000+'
 	speed = '{} frames/s'.format(processed_fps)
 
 	# eta
 	if frame_count:
-		frames_left = frame_count - current_frame
+		frames_left = frame_count - used_frame_count
 		seconds_left = elapsed * frames_left
 		eta_minutes = floor(seconds_left / 60)
 		eta_seconds = floor(seconds_left) % 60
