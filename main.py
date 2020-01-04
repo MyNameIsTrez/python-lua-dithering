@@ -30,7 +30,6 @@ def process_frames(full_file_name, computer_type):
 		else:
 			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
-		# get the new image width
 		new_height = max_height
 		if new_width_stretched:
 			new_width = max_width
@@ -218,7 +217,9 @@ if computer_type == 'laptop':
 	max_width = 227
 	max_height = 85
 elif computer_type == 'desktop':
+	# 426 on my desktop computer
 	max_width = 426
+	# 160 on my desktop computer
 	max_height = 160
 else:
 	print('You didn\'t enter a valid \'computer_type\' name!')
