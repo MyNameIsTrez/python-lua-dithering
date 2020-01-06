@@ -153,7 +153,7 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 		for x in range(modified_width):
 			# the brightness of a pixel determines which character will be used in ComputerCraft for that pixel
 			brightness = get_brightness(frame_pixels[x, y])
-			char = dithering.getClosestChar(brightness)
+			char = dithering.get_closest_char(brightness)
 
 			if not compressed_output:
 				string += char
