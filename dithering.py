@@ -1,16 +1,16 @@
-## IMPORTING ####################
-
 from bisect import bisect_left
+
 
 ## README ####################
 
-# This file contains a public table, which contains every character in Tekkit Classic's 1.33 ComputerCraft character set.
-# For every character in this table, it contains the number of cyan 3x3 pixels they are drawn with, which I dubbed 'blocks'.
 
-# This is an unused artifact removal technique, that I can probably employ to improve the effectiveness of the dithering:
-# https://news.ycombinator.com/item?id=15546769
+# This file contains a table with characters in it from Tekkit Classic's ComputerCraft (1.33) character set.
+# The characters in the chars table are ordered by the number of cyan 3x3 pixels they are drawn with.
+# The ordering of this table was done with another python script that has since been deleted.
+
 
 ## UNEDITABLE VARIABLES ####################
+
 
 chars = [
 	' ', '.', "'", ':', '-', '!', '/', '(', '=', '%',
@@ -22,7 +22,9 @@ charIndices = [
 	11, 12, 13, 14, 15, 16, 17, 18, 19
 ]
 
+
 ## FUNCTIONS ####################
+
 
 def take_closest(myNumber):
 	"""
