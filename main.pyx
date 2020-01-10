@@ -26,7 +26,7 @@ def process_frames(full_file_name, computer_type, max_width, max_height, frame_s
 			old_image = Image.open(input_path)
 
 		new_height = max_height
-		new_width = get_new_width(extension, video, old_image, input_path, new_height, max_width)
+		new_width = get_new_width(extension, video, old_image, input_path, new_height, max_width, file_name)
 
 		if extension == 'mp4':
 			used_frame_count = process_mp4_frames(video, frame_skipping, new_width, new_height, output_file)
@@ -48,7 +48,7 @@ def process_frames(full_file_name, computer_type, max_width, max_height, frame_s
 		os.rename(output_path, renamed_output_path)
 
 
-def get_new_width(extension, video, old_image, input_path, new_height, max_width):
+def get_new_width(extension, video, old_image, input_path, new_height, max_width, file_name):
 	if extension == 'mp4':
 		# get information about the video file
 		old_width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -266,7 +266,7 @@ def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_tim
 	clear = '		'
 
 	# the end='\r' and flush=True mean the print statement will keep drawing over its last position
-	print('    ' + progress + ', total speed: ' + speed + ', pixel loop speed: ' + speed_2 + ', ' + eta + clear, end='\r', flush=True)
+	#print('    ' + progress + ', total speed: ' + speed + ', pixel loop speed: ' + speed_2 + ', ' + eta + clear, end='\r', flush=True)
 
 
 # USER SETTINGS #######################################
@@ -275,7 +275,7 @@ def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_tim
 t0 = time.time()
 
 
-computer_type = 'laptop'
+computer_type = 'desktop'
 compressed_output = False
 new_width_stretched = True
 # a file compression method
