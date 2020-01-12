@@ -9,11 +9,11 @@ import dithering
 # FUNCTIONS #######################################
 
 
-def process_frames(full_file_name, computer_type, max_width, max_height, frame_skipping):
-	extension = full_file_name.split('.', 1)[1]  # get the extension after the '.'
-	file_name = full_file_name.split('.', 1)[0]  # get the name before the '.'
+def process_frames(full_file_name, max_width, max_height, frame_skipping):
+	extension = full_file_name.split('.')[1]  # get the extension after the '.'
+	file_name = full_file_name.split('.')[0]  # get the name before the '.'
 	input_path = 'inputs/' + full_file_name
-	output_path = computer_type + ' outputs/' + file_name
+	output_path = 'outputs/' + file_name.replace(' ', '_') + '.txt'
 
 	with open(output_path, 'w') as output_file:
 		print('Processing \'' + file_name + '\'')
@@ -38,14 +38,11 @@ def process_frames(full_file_name, computer_type, max_width, max_height, frame_s
 			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
 		# prepare output file for writing data
-		compressed_output_str = 'true' if compressed_output else 'false'
-		string = '\nframe_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height) + ',compressed=' + compressed_output_str + ','
+		string = '\nframe_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height) + ','
 		output_file.write(string)
 		print()
 
 		output_file.close()
-		renamed_output_path = output_path + ' [' + str(used_frame_count) + ']' + '.txt'
-		os.rename(output_path, renamed_output_path)
 
 
 def get_new_width(extension, video, old_image, input_path, new_height, max_width):
@@ -154,40 +151,7 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 			# the brightness of a pixel determines which character will be used in ComputerCraft for that pixel
 			brightness = get_brightness(frame_pixels[x, y])
 			char = dithering.get_closest_char(brightness)
-
-			if not compressed_output:
-				string += char
-			else:
-				# boolean for whether this is the last character at this line
-				final_line_char = (x == modified_width - 1)
-
-				# boolean for whether this is the last character in the frame
-				final_frame_char = (y == new_height - 1 and x == new_width - 1 - 0)
-
-				if char == prev_char and not final_frame_char and not final_line_char:
-					prev_char_count += 1
-				else:
-					# if the final char is equal to the previous char
-					if (final_frame_char or final_line_char) and char == prev_char:
-						prev_char_count += 1
-
-					# add the previous chars
-					if prev_char_count > 5:
-						string += '[' + str(prev_char_count) + ';' + prev_char + ']'
-					else:
-						string += str(prev_char) * prev_char_count
-
-					# if the final char isn't equal to the previous char
-					if (final_frame_char or final_line_char) and char != prev_char:
-						# concatenate the final char
-						string += char
-
-					if not final_line_char:
-						prev_char_count = 1
-					else:
-						prev_char_count = 0
-
-					prev_char = char
+			string += char
 
 		# the last character in a frame doesn't need a return character after it
 		if y < new_height - 1:
@@ -272,40 +236,32 @@ def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_tim
 # USER SETTINGS #######################################
 
 
-t0 = time.time()
-
-
-computer_type = 'laptop'
-compressed_output = False
+# if set to true, the original aspect ratio won't be kept so the width can be stretched to max_width 
 new_width_stretched = True
+
 # a file compression method
 # 1 means every frame of the video is kept, 3 means every third frame of the video is kept
 frame_skipping = 1
 
-
-# this is useful for me personally, as I switch between using my desktop and laptop a lot
+# this determines the width and height of the output frames
 # see tekkit/config/mod_ComputerCraft.cfg to set your own max_width and max_height values
-if computer_type == 'laptop':
-	# 227 on my desktop computer
-	max_width = 227
-	# 85 on my desktop computer
-	max_height = 85
-elif computer_type == 'desktop':
-	# 426 on my desktop computer
-	max_width = 426
-	# 160 on my desktop computer
-	max_height = 160
-else:
-	print('You didn\'t enter a valid \'computer_type\' name!')
+# max_width = 30
+# max_height = 30
+max_width = 227
+max_height = 85
+# max_width = 426
+# max_height = 160
 
 
 # EXECUTION OF THE PROGRAM #######################################
 
 
+t0 = time.time()
+
 # get all filenames that will be processed
 names = os.listdir('inputs')
 for name in names:
-	process_frames(name, computer_type, max_width, max_height, frame_skipping)
+	process_frames(name, max_width, max_height, frame_skipping)
 	# moving file to the temp inputs folder so it doesn't get processed again the next time
 	os.rename('inputs/' + name, 'temp inputs/' + name)
 
