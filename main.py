@@ -150,7 +150,10 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 		for x in range(modified_width):
 			# the brightness of a pixel determines which character will be used in ComputerCraft for that pixel
 			brightness = get_brightness(frame_pixels[x, y])
-			char = dithering.get_closest_char(brightness)
+			if not extended_chars:
+				char = dithering.get_closest_char_default(brightness)
+			else:
+				char = dithering.get_closest_char_extended(brightness)
 			string += char
 
 		# the last character in a frame doesn't need a return character after it
@@ -236,7 +239,23 @@ def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_tim
 # USER SETTINGS #######################################
 
 
-# if set to true, the original aspect ratio won't be kept so the width can be stretched to max_width 
+# default is False
+# if true, the program assumes 95 characters are available, instead of the usual 20
+# 95 are available by replacing Tekkit's default characters in default.png, see the instructions below
+extended_chars = True
+
+# how to get the extended character set (characters are replaced with grayscale blocks):
+# 1. make a backup of ...\AppData\Roaming\.technic\modpacks\tekkit\bin\minecraft.jar
+# 2. copy another minecraft.jar and rename it to minecraft.zip
+# 3. open minecraft.zip
+# 4. make a copy of minecraft.zip/font/default.png
+# 5. edit default.png, so the characters ' ' till '~' are all colored blocks of incrementing grayscale
+# 6. save default.png, and replace the older default.png file inside the minecraft.zip file with the new one
+# 7. rename minecraft.zip to minecraft.jar and replace the old minecraft.jar file with the new one
+# 8. tekkit's characters should now all be replaced with your colored blocks on incrementing grayscale
+# 9. when you want to go back to a readable font, switch your custom minecraft.jar file with the backup
+
+# if true, the original aspect ratio won't be kept so the width can be stretched to max_width 
 new_width_stretched = True
 
 # a file compression method
