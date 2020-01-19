@@ -11,7 +11,8 @@ import dithering
 
 def process_frames(full_file_name, max_width, max_height, frame_skipping):
 	extension = full_file_name.split('.')[1]  # get the extension after the '.'
-	file_name = full_file_name.split('.')[0]  # get the name before the '.'
+	# get the name before the '.', and optionally add '_extended'
+	file_name = full_file_name.split('.')[0] + (' extended' if extended_chars else '')
 	input_path = 'inputs/' + full_file_name
 	output_path = 'outputs/' + file_name.replace(' ', '_') + '.txt'
 
@@ -33,7 +34,7 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 		elif extension == 'gif':
 			used_frame_count = process_gif_frames(old_image, new_width, new_height, output_file)
 		elif extension == 'jpeg' or extension == 'png' or extension == 'jpg':
-			used_frame_count = process_image_frames(old_image, new_width, new_height, output_file)
+			used_frame_count = process_image_frame(old_image, new_width, new_height, output_file)
 		else:
 			print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
@@ -76,18 +77,20 @@ def process_mp4_frames(video, frame_skipping, new_width, new_height, output_file
 		start_frame_time = time.time()
 
 		hasFrames, cv2_frame = video.read()
+
 		if hasFrames:
 			if i % frame_skipping == 0:
-				cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB)  # is this necessary?
-				pil_frame = Image.fromarray(cv2_frame)
-				pil_frame = pil_frame.convert('RGBA')
+				# cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB)
+
+				cv2_frame = cv2.resize(cv2_frame, (new_width, new_height))
+
+				pil_frame = Image.fromarray(cv2_frame)  # pil pixels can be read faster than cv2 pixels, it seems
 
 				used_frame_count += 1
 
-				# resize the image to the desired width and height
-				pil_frame = pil_frame.resize((new_width, new_height), Image.ANTIALIAS)
+				get_frame_time = time.time() - start_frame_time  # 40 frames/s
 
-				process_frame(pil_frame, used_frame_count, new_width, new_height, output_file, new_frame_count, start_frame_time)
+				process_frame(pil_frame, used_frame_count, new_width, new_height, output_file, new_frame_count, start_frame_time, get_frame_time)
 			i += 1
 		else:
 			video.release()
@@ -107,7 +110,9 @@ def process_gif_frames(old_image, new_width, new_height, output_file):
 
 				used_frame_count += 1
 
-				process_frame(new_image, used_frame_count, new_width, new_height, output_file, None, start_frame_time)
+				get_frame_time = time.time() - start_frame_time
+
+				process_frame(new_image, used_frame_count, new_width, new_height, output_file, None, start_frame_time, get_frame_time)
 				old_image.seek(old_image.tell() + 1)  # gets the next frame
 			i += 1
 	except:
@@ -115,20 +120,28 @@ def process_gif_frames(old_image, new_width, new_height, output_file):
 		return used_frame_count
 
 
-def process_image_frames(old_image, new_width, new_height, output_file):
+def process_image_frame(old_image, new_width, new_height, output_file):
 	start_frame_time = time.time()
 
 	new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
+	# new_image = old_image.resize((new_width, new_height), Image.NEAREST)
+	# new_image = old_image.resize((new_width, new_height), Image.BILINEAR)
+	# new_image = old_image.resize((new_width, new_height), Image.BICUBIC)
+	
 	# new_image = new_image.convert('RGB')
 
 	used_frame_count = 1
 
-	process_frame(new_image, used_frame_count, new_width, new_height, output_file, 1, start_frame_time)
+	get_frame_time = time.time() - start_frame_time
+
+	process_frame(new_image, used_frame_count, new_width, new_height, output_file, 1, start_frame_time, get_frame_time)
 
 	return used_frame_count
 
 
-def process_frame(frame, used_frame_count, new_width, new_height, output_file, frame_count, start_frame_time):
+def process_frame(frame, used_frame_count, new_width, new_height, output_file, frame_count, start_frame_time, get_frame_time):
+	preparing_loop_start_time = time.time()
+
 	# not sure if it is necessary to convert the frame into RGBA!
 	frame = frame.convert('RGBA')
 	# load the pixels of the frame
@@ -142,6 +155,8 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 	# the \n character at the end of every line needs to have one spot reserved
 	# this should ideally be done at the resizing of the frame stage instead!
 	modified_width = new_width - 1
+
+	preparing_loop_end_time = time.time()
 
 	# measure the time it takes for the coming 'for y, for x' loop to execute
 	looping_start_time = time.time()
@@ -164,6 +179,8 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 
 	looping_end_time = time.time()
 
+	writing_start_time = time.time()
+
 	# gives each frame its own line in the outputted file, so lines can easily be found and parsed
 	if used_frame_count > 1:
 		final_string = '\n' + string
@@ -172,7 +189,13 @@ def process_frame(frame, used_frame_count, new_width, new_height, output_file, f
 
 	output_file.write(final_string)
 
-	print_stats(used_frame_count, frame_count, start_frame_time, looping_end_time, looping_start_time)
+	writing_end_time = time.time()
+
+	preparing_loop_time = preparing_loop_end_time - preparing_loop_start_time
+	looping_time = looping_end_time - looping_start_time
+	writing_time = writing_end_time - writing_start_time
+
+	print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time, preparing_loop_time, looping_time, writing_time)
 
 
 def get_brightness(tup):
@@ -184,7 +207,7 @@ def get_brightness(tup):
 		return 0
 
 
-def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_time, looping_start_time):
+def print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time, preparing_loop_time, looping_time, writing_time):
 	# progress
 	progress = 'Frame ' + str(used_frame_count) + '/'
 	if frame_count:
@@ -198,15 +221,35 @@ def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_tim
 		processed_fps = floor(1 / elapsed)
 	else:
 		processed_fps = '1000+'
-	speed = '{} frames/s'.format(processed_fps)
+	speed = ', total: {} frames/s'.format(processed_fps)
 
-	# speed of the 'for y, for x' loop
-	elapsed_2 = looping_end_time - looping_start_time
-	if elapsed_2 > 0:
-		processed_fps = floor(1 / elapsed_2)
+	# speed of getting the frame
+	if get_frame_time > 0:
+		processed_fps = floor(1 / get_frame_time)
 	else:
 		processed_fps = '1000+'
-	speed_2 = '{} frames/s'.format(processed_fps)
+	speed_2 = ', get frame: {} frames/s'.format(processed_fps)
+
+	# preparing for the 'for y, for x' loop
+	if preparing_loop_time > 0:
+		processed_fps = floor(1 / preparing_loop_time)
+	else:
+		processed_fps = '1000+'
+	speed_3 = ', preparing loop: {} frames/s'.format(processed_fps)
+
+	# speed of the 'for y, for x' loop
+	if looping_time > 0:
+		processed_fps = floor(1 / looping_time)
+	else:
+		processed_fps = '1000+'
+	speed_4 = ', pixel loop: {} frames/s'.format(processed_fps)
+
+	# writing speed
+	if writing_time > 0:
+		processed_fps = floor(1 / writing_time)
+	else:
+		processed_fps = '1000+'
+	speed_5 = ', writing: {} frames/s'.format(processed_fps)
 
 	# calculate how long it should take for the program to finish
 	if frame_count:
@@ -225,35 +268,33 @@ def print_stats(used_frame_count, frame_count, start_frame_time, looping_end_tim
 		if eta_seconds < 10:
 			eta_seconds = '0' + str(eta_seconds)
 
-		eta = '{}:{}:{} left'.format(eta_hours, eta_minutes, eta_seconds)
+		eta = ', {}:{}:{} left'.format(eta_hours, eta_minutes, eta_seconds)
 	else:
-		eta = '? left'
+		eta = ', ? left'
 
 	# clears the line that will be printed on of any straggling characters
+	tab = '    '
 	clear = '		'
 
 	# the end='\r' and flush=True mean the print statement will keep drawing over its last position
-	print('    ' + progress + ', total speed: ' + speed + ', pixel loop speed: ' + speed_2 + ', ' + eta + clear, end='\r', flush=True)
+	print(tab + progress + speed + speed_2 + speed_3 + speed_4 + speed_5 + eta + clear, end='\r', flush=True)
 
 
 # USER SETTINGS #######################################
 
 
 # default is False
-# if true, the program assumes 95 characters are available, instead of the usual 20
-# 95 are available by replacing Tekkit's default characters in default.png, see the instructions below
+# if true, the program assumes 94 characters are available, instead of the usual 20
+# 94 are available by replacing Tekkit's default characters in default.png, see the instructions below
 extended_chars = True
 
 # how to get the extended character set (characters are replaced with grayscale blocks):
-# 1. make a backup of ...\AppData\Roaming\.technic\modpacks\tekkit\bin\minecraft.jar
-# 2. copy another minecraft.jar and rename it to minecraft.zip
-# 3. open minecraft.zip
-# 4. make a copy of minecraft.zip/font/default.png
-# 5. edit default.png, so the characters ' ' till '~' are all colored blocks of incrementing grayscale
-# 6. save default.png, and replace the older default.png file inside the minecraft.zip file with the new one
-# 7. rename minecraft.zip to minecraft.jar and replace the old minecraft.jar file with the new one
-# 8. tekkit's characters should now all be replaced with your colored blocks on incrementing grayscale
-# 9. when you want to go back to a readable font, switch your custom minecraft.jar file with the backup
+# 1. go to %appdata%/.technic/modpacks/tekkit/bin
+# 2. remove the minecraft.jar file and replace it with 'minecraft.jar versions/new/minecraft.jar',
+#    which can be found inside the same folder of this program
+# 3. tekkit's characters should now all be replaced with 94 grayscale colors, instead of the default 19
+# 4. when you want to go back to the default font,
+# 	 replace the new minecraft.jar file with 'minecraft.jar versions/old/minecraft.jar'
 
 # if true, the original aspect ratio won't be kept so the width can be stretched to max_width 
 new_width_stretched = True
@@ -265,14 +306,14 @@ frame_skipping = 1
 # this determines the width and height of the output frames
 # see tekkit/config/mod_ComputerCraft.cfg to set your own max_width and max_height values
 
-# max_width = 30
-# max_height = 30
+max_width = 30
+max_height = 30
 
 # max_width = 227
 # max_height = 85
 
-max_width = 426
-max_height = 160
+# max_width = 426
+# max_height = 160
 
 # max_width = 640
 # max_height = 240
