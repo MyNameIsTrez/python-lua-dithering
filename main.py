@@ -306,8 +306,12 @@ frame_skipping = 1
 # this determines the width and height of the output frames
 # see tekkit/config/mod_ComputerCraft.cfg to set your own max_width and max_height values
 
-max_width = 30
-max_height = 30
+# max_width = 30
+# max_height = 30
+
+# max 8x6 monitor size in ComputerCraft
+max_width = 77
+max_height = 38
 
 # max_width = 227
 # max_height = 85
