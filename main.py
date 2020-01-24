@@ -4,6 +4,7 @@ from math import floor
 import cv2
 from PIL import Image
 import dithering
+print(dithering)
 
 
 # FUNCTIONS #######################################
