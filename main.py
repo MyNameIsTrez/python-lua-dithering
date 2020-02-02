@@ -287,7 +287,7 @@ def print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time,
 # default is False
 # if true, the program assumes 94 characters are available, instead of the usual 20
 # 94 are available by replacing Tekkit's default characters in default.png, see the instructions below
-extended_chars = True
+extended_chars = False
 
 # how to get the extended character set (characters are replaced with grayscale blocks):
 # 1. go to %appdata%/.technic/modpacks/tekkit/bin
@@ -310,9 +310,13 @@ frame_skipping = 1
 # max_width = 30
 # max_height = 30
 
-# max 8x6 monitor size in ComputerCraft
+# max 8x5 monitor size in ComputerCraft
 max_width = 77
-max_height = 38
+max_height = 31
+
+# max 8x6 monitor size in ComputerCraft
+# max_width = 77
+# max_height = 38
 
 # max_width = 227
 # max_height = 85
