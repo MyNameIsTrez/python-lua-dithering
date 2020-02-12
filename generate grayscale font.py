@@ -23,4 +23,4 @@ for row in range(row_count):
 				y = by
 				char_pix[x, y] = get_grayscale(char_val + offset)
 
-	char_img.save('extended chars/row ' + str(row + 1) + '.png')
+	char_img.save('grayscale font/row ' + str(row + 1) + '.png')
