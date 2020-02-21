@@ -4,7 +4,6 @@ from math import floor
 import cv2
 from PIL import Image
 import dithering
-print(dithering)
 
 
 # FUNCTIONS #######################################
@@ -336,9 +335,10 @@ t0 = time.time()
 # get all filenames that will be processed
 names = os.listdir('inputs')
 for name in names:
-	process_frames(name, max_width, max_height, frame_skipping)
-	# moving file to the temp inputs folder so it doesn't get processed again the next time
-	os.rename('inputs/' + name, 'temp inputs/' + name)
+	if name != 'deletemepls':
+		process_frames(name, max_width, max_height, frame_skipping)
+		# moving file to the temp inputs folder so it doesn't get processed again the next time
+		os.rename('inputs/' + name, 'temp inputs/' + name)
 
 # print the time it took to run the program
 time_elapsed = time.time() - t0

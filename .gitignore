@@ -1,4 +1,8 @@
 __pycache__
-inputs
-outputs
-temp inputs
+fonts/color/*
+fonts/grayscale/*
+inputs/*
+!inputs/deletemepls
+outputs/*
+!outputs/deletemepls
+temp inputs/*
