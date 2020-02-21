@@ -335,7 +335,7 @@ t0 = time.time()
 # get all filenames that will be processed
 names = os.listdir('inputs')
 for name in names:
-	if name != 'deletemepls':
+	if name != '.empty': # '.empty' prevents the folder from being removed
 		process_frames(name, max_width, max_height, frame_skipping)
 		# moving file to the temp inputs folder so it doesn't get processed again the next time
 		os.rename('inputs/' + name, 'temp inputs/' + name)

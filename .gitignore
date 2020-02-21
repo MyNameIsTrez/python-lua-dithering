@@ -2,7 +2,7 @@ __pycache__
 fonts/color/*
 fonts/grayscale/*
 inputs/*
-!inputs/deletemepls
+!inputs/.empty
 outputs/*
-!outputs/deletemepls
+!outputs/.empty
 temp inputs/*
