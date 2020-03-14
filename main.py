@@ -386,10 +386,10 @@ frames_to_update_stats = 10
 # this determines the width and height of the output frames
 # see tekkit/config/mod_ComputerCraft.cfg to set your own max_width and max_height values
 
-# max_width = 30
-# max_height = 30
+max_width = 30
+max_height = 30
 
-# max 8x5 monitor size in ComputerCraft
+# max 8x5 monitor size in ComputerCraft, used because 8x6 doesn't always work
 # max_width = 77
 # max_height = 31
 
@@ -397,12 +397,15 @@ frames_to_update_stats = 10
 # max_width = 77
 # max_height = 38
 
+# 1080p
 # max_width = 227
 # max_height = 85
 
-max_width = 426
-max_height = 160
+# 1440p
+# max_width = 426
+# max_height = 160
 
+# 4k
 # max_width = 640
 # max_height = 240
 
