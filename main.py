@@ -4,7 +4,13 @@ import sys
 from math import floor
 import cv2
 from PIL import Image
+
+sys.path.append('libs/')
 import dithering
+
+# from python-lua-dithering.libs import dithering
+# import libs.dithering
+# from libs.dithering import *
 
 
 # FUNCTIONS #######################################
@@ -18,9 +24,13 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 	output_file_name = file_name.replace(' ', '_')
 
 	output_folder_name = 'outputs/' + output_file_name
+	output_data_folder_name = output_folder_name + '/data'
 	
 	if not os.path.exists(output_folder_name):
 		os.mkdir(output_folder_name)
+	
+	if not os.path.exists(output_data_folder_name):
+		os.mkdir(output_data_folder_name)
 
 	print('Processing \'' + file_name + '\'')
 
@@ -35,19 +45,18 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 	new_width = get_new_width(extension, video, old_image, input_path, new_height, max_width)
 
 	if extension == 'mp4':
-		used_frame_count, output_file = process_mp4_frames(output_folder_name, video, frame_skipping, new_width, new_height)
+		used_frame_count = process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width, new_height)
 	elif extension == 'gif':
-		used_frame_count, output_file = process_gif_frames(output_folder_name, old_image, new_width, new_height)
+		used_frame_count = process_gif_frames(output_data_folder_name, old_image, new_width, new_height)
 	elif extension == 'jpeg' or extension == 'png' or extension == 'jpg':
-		used_frame_count, output_file = process_image_frame(output_folder_name, old_image, new_width, new_height)
+		used_frame_count = process_image_frame(output_data_folder_name, old_image, new_width, new_height)
 	else:
 		print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
-	# prepare output file for writing data
-	string = '\nframe_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height)
-	output_file.write(string)
-
-	output_file.close()
+	output_info_file = create_output_file(output_folder_name, 'info')
+	string = 'frame_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height)
+	output_info_file.write(string)
+	output_info_file.close()
 
 
 def get_new_width(extension, video, old_image, input_path, new_height, max_width):
@@ -70,12 +79,12 @@ def get_new_width(extension, video, old_image, input_path, new_height, max_width
 		return int(new_height * old_width / old_height)
 
 
-def create_output_file(folder, i):
-	output_path = folder + '/' + str(i) + '.txt'
+def create_output_file(folder, name):
+	output_path = folder + '/' + str(name) + '.txt'
 	return open(output_path, 'w')
 
 
-def try_create_new_output_file(line_num, file_byte_count, output_file, output_folder_name, file_num):
+def try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, file_num):
 	line_num += 1
 
 	if file_byte_count >= max_bytes_per_file:
@@ -84,7 +93,7 @@ def try_create_new_output_file(line_num, file_byte_count, output_file, output_fo
 		if output_file:
 			output_file.close()
 
-		output_file = create_output_file(output_folder_name, file_num)
+		output_file = create_output_file(output_data_folder_name, file_num)
 
 		file_num += 1
 
@@ -93,7 +102,7 @@ def try_create_new_output_file(line_num, file_byte_count, output_file, output_fo
 	return line_num, file_byte_count, output_file, file_num
 
 
-def process_mp4_frames(output_folder_name, video, frame_skipping, new_width, new_height):
+def process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width, new_height):
 	i = 0
 	used_frame_count = 0
 
@@ -101,7 +110,7 @@ def process_mp4_frames(output_folder_name, video, frame_skipping, new_width, new
 	new_frame_count = floor(actual_frame_count / frame_skipping)
 
 	file_byte_count = 0
-	output_file = create_output_file(output_folder_name, 0)
+	output_file = create_output_file(output_data_folder_name, 0)
 	file_num = 1
 	line_num = 0
 
@@ -114,7 +123,7 @@ def process_mp4_frames(output_folder_name, video, frame_skipping, new_width, new
 			if i % frame_skipping == 0:
 				used_frame_count += 1
 
-				line_num, file_byte_count, output_file, file_num = try_create_new_output_file(line_num, file_byte_count, output_file, output_folder_name, file_num)
+				line_num, file_byte_count, output_file, file_num = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, file_num)
 				
 				# cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB)
 
@@ -128,15 +137,17 @@ def process_mp4_frames(output_folder_name, video, frame_skipping, new_width, new
 			i += 1
 		else:
 			video.release()
-			return used_frame_count, output_file
+			output_file.close()
+
+			return used_frame_count
 
 
-def process_gif_frames(output_folder_name, old_image, new_width, new_height):
+def process_gif_frames(output_data_folder_name, old_image, new_width, new_height):
 	i = 0
 	used_frame_count = 0
 
 	file_byte_count = 0
-	output_file = create_output_file(output_folder_name, 0)
+	output_file = create_output_file(output_data_folder_name, 0)
 	file_num = 1
 	line_num = 0
 
@@ -147,7 +158,7 @@ def process_gif_frames(output_folder_name, old_image, new_width, new_height):
 			if i % frame_skipping == 0:
 				used_frame_count += 1
 
-				line_num, file_byte_count, output_file, file_num = try_create_new_output_file(line_num, file_byte_count, output_file, output_folder_name, file_num)
+				line_num, file_byte_count, output_file, file_num = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, file_num)
 				
 				new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
 
@@ -159,13 +170,15 @@ def process_gif_frames(output_folder_name, old_image, new_width, new_height):
 			i += 1
 	except:
 		# this part gets reached when the code tries to find the next frame, while it doesn't exist
-		return used_frame_count, output_file
+		output_file.close()
+
+		return used_frame_count
 
 
-def process_image_frame(output_folder_name, old_image, new_width, new_height):
+def process_image_frame(output_data_folder_name, old_image, new_width, new_height):
 	line_num = 0
 
-	output_file = create_output_file(output_folder_name, 0)
+	output_file = create_output_file(output_data_folder_name, 0)
 
 	start_frame_time = time.time()
 
@@ -182,7 +195,9 @@ def process_image_frame(output_folder_name, old_image, new_width, new_height):
 
 	process_frame(new_image, used_frame_count, line_num, new_width, new_height, output_file, 1, start_frame_time, get_frame_time)
 
-	return used_frame_count, output_file
+	output_file.close()
+	
+	return used_frame_count
 
 
 def process_frame(frame, used_frame_count, line_num, new_width, new_height, output_file, frame_count, start_frame_time, get_frame_time):
@@ -241,8 +256,11 @@ def process_frame(frame, used_frame_count, line_num, new_width, new_height, outp
 	looping_time = looping_end_time - looping_start_time
 	writing_time = writing_end_time - writing_start_time
 
-	# if used_frame_count % 100 == 0 or used_frame_count == frame_count:
-	# 	print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time, preparing_loop_time, looping_time, writing_time)
+	if used_frame_count % frames_to_update_stats == 0 or used_frame_count == frame_count:
+		print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time, preparing_loop_time, looping_time, writing_time)
+		
+		if used_frame_count == frame_count:	
+			print()
 
 	string_byte_count = len(final_string.encode("utf8"))
 
@@ -272,7 +290,7 @@ def print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time,
 		processed_fps = floor(1 / elapsed)
 	else:
 		processed_fps = '1000+'
-	speed = ', total: {} frames/s'.format(processed_fps)
+	speed = ', speed: {} frames/s'.format(processed_fps)
 
 	# speed of getting the frame
 	if get_frame_time > 0:
@@ -358,14 +376,18 @@ new_width_stretched = True
 # 1 means every frame of the video is kept, 3 means every third frame of the video is kept
 frame_skipping = 1
 
-# 100 MB GitHub file limit
-max_bytes_per_file = 1e3
+# 100 MB GitHub file limit. 9.5e7 is 95 million.
+max_bytes_per_file = 9.5e7
+
+# how many frames have to be processed before the stats in the console are updated
+frames_to_update_stats = 10
+
 
 # this determines the width and height of the output frames
 # see tekkit/config/mod_ComputerCraft.cfg to set your own max_width and max_height values
 
-max_width = 30
-max_height = 30
+# max_width = 30
+# max_height = 30
 
 # max 8x5 monitor size in ComputerCraft
 # max_width = 77
@@ -378,8 +400,8 @@ max_height = 30
 # max_width = 227
 # max_height = 85
 
-# max_width = 426
-# max_height = 160
+max_width = 426
+max_height = 160
 
 # max_width = 640
 # max_height = 240
@@ -387,6 +409,8 @@ max_height = 30
 
 # EXECUTION OF THE PROGRAM #######################################
 
+
+print()
 
 t0 = time.time()
 
