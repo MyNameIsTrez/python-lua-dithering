@@ -45,16 +45,16 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 	new_width = get_new_width(extension, video, old_image, input_path, new_height, max_width)
 
 	if extension == 'mp4':
-		used_frame_count = process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width, new_height)
+		used_frame_count, data_frames_count = process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width, new_height)
 	elif extension == 'gif':
-		used_frame_count = process_gif_frames(output_data_folder_name, old_image, new_width, new_height)
+		used_frame_count, data_frames_count = process_gif_frames(output_data_folder_name, old_image, new_width, new_height)
 	elif extension == 'jpeg' or extension == 'png' or extension == 'jpg':
-		used_frame_count = process_image_frame(output_data_folder_name, old_image, new_width, new_height)
+		used_frame_count, data_frames_count = process_image_frame(output_data_folder_name, old_image, new_width, new_height)
 	else:
 		print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
 	output_info_file = create_output_file(output_folder_name, 'info')
-	string = 'frame_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height)
+	string = 'frame_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height) + ',data_num=' + str(data_frames_count)
 	output_info_file.write(string)
 	output_info_file.close()
 
@@ -84,7 +84,7 @@ def create_output_file(folder, name):
 	return open(output_path, 'w')
 
 
-def try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, file_num):
+def try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, data_frames_count):
 	line_num += 1
 
 	if file_byte_count >= max_bytes_per_file:
@@ -93,13 +93,13 @@ def try_create_new_output_file(line_num, file_byte_count, output_file, output_da
 		if output_file:
 			output_file.close()
 
-		output_file = create_output_file(output_data_folder_name, file_num)
+		output_file = create_output_file(output_data_folder_name, data_frames_count)
 
-		file_num += 1
+		data_frames_count += 1
 
 		line_num = 1
 	
-	return line_num, file_byte_count, output_file, file_num
+	return line_num, file_byte_count, output_file, data_frames_count
 
 
 def process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width, new_height):
@@ -110,8 +110,8 @@ def process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width
 	new_frame_count = floor(actual_frame_count / frame_skipping)
 
 	file_byte_count = 0
-	output_file = create_output_file(output_data_folder_name, 0)
-	file_num = 1
+	output_file = create_output_file(output_data_folder_name, 1)
+	data_frames_count = 2
 	line_num = 0
 
 	while True:
@@ -123,7 +123,7 @@ def process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width
 			if i % frame_skipping == 0:
 				used_frame_count += 1
 
-				line_num, file_byte_count, output_file, file_num = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, file_num)
+				line_num, file_byte_count, output_file, data_frames_count = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, data_frames_count)
 				
 				# cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB)
 
@@ -139,7 +139,7 @@ def process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width
 			video.release()
 			output_file.close()
 
-			return used_frame_count
+			return used_frame_count, data_frames_count - 1
 
 
 def process_gif_frames(output_data_folder_name, old_image, new_width, new_height):
@@ -147,8 +147,8 @@ def process_gif_frames(output_data_folder_name, old_image, new_width, new_height
 	used_frame_count = 0
 
 	file_byte_count = 0
-	output_file = create_output_file(output_data_folder_name, 0)
-	file_num = 1
+	output_file = create_output_file(output_data_folder_name, 1)
+	data_frames_count = 2
 	line_num = 0
 
 	try:
@@ -158,7 +158,7 @@ def process_gif_frames(output_data_folder_name, old_image, new_width, new_height
 			if i % frame_skipping == 0:
 				used_frame_count += 1
 
-				line_num, file_byte_count, output_file, file_num = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, file_num)
+				line_num, file_byte_count, output_file, data_frames_count = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, data_frames_count)
 				
 				new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
 
@@ -172,13 +172,14 @@ def process_gif_frames(output_data_folder_name, old_image, new_width, new_height
 		# this part gets reached when the code tries to find the next frame, while it doesn't exist
 		output_file.close()
 
-		return used_frame_count
+		return used_frame_count, data_frames_count - 1
 
 
 def process_image_frame(output_data_folder_name, old_image, new_width, new_height):
+	data_frames_count = 1
 	line_num = 0
 
-	output_file = create_output_file(output_data_folder_name, 0)
+	output_file = create_output_file(output_data_folder_name, 1)
 
 	start_frame_time = time.time()
 
@@ -197,7 +198,7 @@ def process_image_frame(output_data_folder_name, old_image, new_width, new_heigh
 
 	output_file.close()
 	
-	return used_frame_count
+	return used_frame_count, data_frames_count
 
 
 def process_frame(frame, used_frame_count, line_num, new_width, new_height, output_file, frame_count, start_frame_time, get_frame_time):
@@ -380,7 +381,7 @@ frame_skipping = 1
 max_bytes_per_file = 9.5e7
 
 # how many frames have to be processed before the stats in the console are updated
-frames_to_update_stats = 10
+frames_to_update_stats = 100
 
 
 # this determines the width and height of the output frames
@@ -420,10 +421,10 @@ t0 = time.time()
 # get all filenames that will be processed
 names = os.listdir('inputs')
 for name in names:
-	if name != '.empty': # '.empty' prevents the folder from being removed
+	if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
 		process_frames(name, max_width, max_height, frame_skipping)
 		# moving file to the temp inputs folder so it doesn't get processed again the next time
-		# os.rename('inputs/' + name, 'temp inputs/' + name)
+		os.rename('inputs/' + name, 'temp inputs/' + name)
 
 # print the time it took to run the program
 time_elapsed = time.time() - t0
