@@ -23,15 +23,6 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 	input_path = 'inputs/' + full_file_name
 	output_file_name = file_name.replace(' ', '_')
 
-	output_folder_name = 'outputs/' + output_file_name
-	output_data_folder_name = output_folder_name + '/data'
-	
-	if not os.path.exists(output_folder_name):
-		os.mkdir(output_folder_name)
-	
-	if not os.path.exists(output_data_folder_name):
-		os.mkdir(output_data_folder_name)
-
 	print('Processing \'' + file_name + '\'')
 
 	if extension == 'mp4':
@@ -44,6 +35,18 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 	new_height = max_height
 	new_width = get_new_width(extension, video, old_image, input_path, new_height, max_width)
 
+	output_folder_size_name = 'outputs/' + 'size_' + str(new_width) + 'x' + str(new_height)
+	if not os.path.exists(output_folder_size_name):
+		os.mkdir(output_folder_size_name)
+
+	output_folder_name = output_folder_size_name + '/' + output_file_name
+	if not os.path.exists(output_folder_name):
+		os.mkdir(output_folder_name)
+
+	output_data_folder_name = output_folder_name + '/data'
+	if not os.path.exists(output_data_folder_name):
+		os.mkdir(output_data_folder_name)
+
 	if extension == 'mp4':
 		used_frame_count, data_frames_count = process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width, new_height)
 	elif extension == 'gif':
@@ -54,7 +57,7 @@ def process_frames(full_file_name, max_width, max_height, frame_skipping):
 		print('Entered an invalid file type; only mp4, gif, jpeg, png and jpg extensions are allowed!')
 
 	output_info_file = create_output_file(output_folder_name, 'info')
-	string = 'frame_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height) + ',data_num=' + str(data_frames_count)
+	string = '{frame_count=' + str(used_frame_count) + ',width=' + str(new_width) + ',height=' + str(new_height) + ',data_files=' + str(data_frames_count) + '}'
 	output_info_file.write(string)
 	output_info_file.close()
 
@@ -263,7 +266,7 @@ def process_frame(frame, used_frame_count, line_num, new_width, new_height, outp
 		if used_frame_count == frame_count:	
 			print()
 
-	string_byte_count = len(final_string.encode("utf8"))
+	string_byte_count = len(final_string.encode('utf8'))
 
 	return string_byte_count
 
@@ -360,7 +363,7 @@ def print_stats(used_frame_count, frame_count, start_frame_time, get_frame_time,
 # default is False
 # if true, the program assumes 94 characters are available, instead of the usual 20
 # 94 are available by replacing Tekkit's default characters in default.png, see the instructions below
-extended_chars = True
+extended_chars = False
 
 # how to get the extended character set (characters are replaced with grayscale blocks):
 # 1. go to %appdata%/.technic/modpacks/tekkit/bin
@@ -372,6 +375,10 @@ extended_chars = True
 
 # if true, the original aspect ratio won't be kept so the width can be stretched to max_width 
 new_width_stretched = True
+
+# normally, files that have been put in the 'inputs' folder will be moved to 'temp inputs' once they've been processed
+# they'll remain in the 'inputs' folder after being processed when this is set to False
+move_processed_files = False
 
 # a file compression method
 # 1 means every frame of the video is kept, 3 means every third frame of the video is kept
@@ -387,28 +394,15 @@ frames_to_update_stats = 100
 # this determines the width and height of the output frames
 # see tekkit/config/mod_ComputerCraft.cfg to set your own max_width and max_height values
 
-max_width = 30
-max_height = 30
-
-# max 8x5 monitor size in ComputerCraft, used because 8x6 doesn't always work
-# max_width = 77
-# max_height = 31
-
-# max 8x6 monitor size in ComputerCraft
-# max_width = 77
-# max_height = 38
-
-# 1080p
-# max_width = 227
-# max_height = 85
-
-# 1440p
-# max_width = 426
-# max_height = 160
-
-# 4k
-# max_width = 640
-# max_height = 240
+# (max_width, max_height)
+output_dimensions = (
+	# (30, 30),
+	# (77, 31), # max 8x5 monitor size in ComputerCraft, used because 8x6 doesn't always work
+	# (77, 38), # max 8x6 monitor size in ComputerCraft
+	# (227, 85), # 1080p
+	(426, 160), # 1440p
+	(640, 240), # 4k
+)
 
 
 # EXECUTION OF THE PROGRAM #######################################
@@ -418,20 +412,25 @@ print()
 
 t0 = time.time()
 
-# get all filenames that will be processed
-names = os.listdir('inputs')
-for name in names:
-	if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
-		process_frames(name, max_width, max_height, frame_skipping)
-		# moving file to the temp inputs folder so it doesn't get processed again the next time
-		os.rename('inputs/' + name, 'temp inputs/' + name)
+for dimension in output_dimensions:
+	max_width, max_height = dimension
+
+	# get all filenames that will be processed
+	names = os.listdir('inputs')
+	for name in names:
+		if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
+			process_frames(name, max_width, max_height, frame_skipping)
+			# moving file to the temp inputs folder so it doesn't get processed again the next time
+			if move_processed_files:
+				os.rename('inputs/' + name, 'temp inputs/' + name)
+	
+	print()
 
 # print the time it took to run the program
 time_elapsed = time.time() - t0
 minutes = floor(time_elapsed / 60)
 seconds = time_elapsed % 60
 
-print()
 print('Done! Duration: {}m, {:.2f}s'.format(minutes, seconds))
 
 # sys.stdout.write("\033[F") # Cursor up one line

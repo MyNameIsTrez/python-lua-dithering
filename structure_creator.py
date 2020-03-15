@@ -1,16 +1,15 @@
 import os
 
-width = 30
-height = 30
+sizes = os.listdir('outputs')
+for size in sizes:
+	if size != '.empty': # '.empty' prevents the folder from being removed on GitHub
+		string = '    ' + size + ' = {'
 
-names = os.listdir('outputs')
+		names = os.listdir('outputs/' + size)
+		for name in names:
+			if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
+				string += '\n        ' + name + ','
 
-string = '    size_' + str(width) + 'x' + str(height) + ' = {'
+		string += '\n    },'
 
-for name in names:
-	if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
-		string += '\n        ' + name + ','
-
-string += '\n    }'
-
-print(string)
+		print(string)
