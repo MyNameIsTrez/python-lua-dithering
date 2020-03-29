@@ -397,8 +397,9 @@ frames_to_update_stats = 100
 # (max_width, max_height)
 output_dimensions = (
 	# (10, 10), # alphabet size
-	(128, 128),
-	# (30, 30),
+	# (128, 128),
+	# (8, 8),
+	(30, 30),
 	# (77, 31), # max 8x5 monitor size in ComputerCraft, used because 8x6 doesn't always work
 	# (77, 38), # max 8x6 monitor size in ComputerCraft
 	# (227, 85), # 1080p
