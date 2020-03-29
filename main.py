@@ -378,7 +378,7 @@ new_width_stretched = True
 
 # normally, files that have been put in the 'inputs' folder will be moved to 'temp inputs' once they've been processed
 # they'll remain in the 'inputs' folder after being processed when this is set to False
-move_processed_files = False
+move_processed_files = True
 
 # a file compression method
 # 1 means every frame of the video is kept, 3 means every third frame of the video is kept

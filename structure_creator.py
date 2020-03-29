@@ -8,7 +8,7 @@ for size in sizes:
 		names = os.listdir('outputs/' + size)
 		for name in names:
 			if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
-				string += '\n        ' + name + ','
+				string += '\n        \'' + name + '\','
 
 		string += '\n    },'
 
