@@ -22,4 +22,4 @@ for row in range(row_count):
 				y2 = y1 + y_offset
 				char_pix[x1, y1] = chars_pix[x2, y2]
 		
-		char_img.save('chars split/chars/char_' + str(col + row * chars_in_row + 1) + '.png')
+		char_img.save('chars split/chars/char_' + str(col + row * chars_in_row) + '.png')
