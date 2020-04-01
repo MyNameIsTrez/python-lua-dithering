@@ -130,7 +130,7 @@ def process_mp4_frames(output_data_folder_name, video, frame_skipping, new_width
 				
 				# cv2_frame = cv2.cvtColor(cv2_frame, cv2.COLOR_BGR2RGB)
 
-				cv2_frame = cv2.resize(cv2_frame, (new_width, new_height))
+				cv2_frame = cv2.resize(cv2_frame, (new_width - 1, new_height))
 
 				pil_frame = Image.fromarray(cv2_frame)  # pil pixels can be read faster than cv2 pixels, it seems
 
@@ -163,7 +163,7 @@ def process_gif_frames(output_data_folder_name, old_image, new_width, new_height
 
 				line_num, file_byte_count, output_file, data_frames_count = try_create_new_output_file(line_num, file_byte_count, output_file, output_data_folder_name, data_frames_count)
 				
-				new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
+				new_image = old_image.resize((new_width - 1, new_height), Image.ANTIALIAS)
 
 				get_frame_time = time.time() - start_frame_time
 
@@ -186,10 +186,10 @@ def process_image_frame(output_data_folder_name, old_image, new_width, new_heigh
 
 	start_frame_time = time.time()
 
-	new_image = old_image.resize((new_width, new_height), Image.ANTIALIAS)
-	# new_image = old_image.resize((new_width, new_height), Image.NEAREST)
-	# new_image = old_image.resize((new_width, new_height), Image.BILINEAR)
-	# new_image = old_image.resize((new_width, new_height), Image.BICUBIC)
+	new_image = old_image.resize((new_width - 1, new_height), Image.ANTIALIAS)
+	# new_image = old_image.resize((new_width - 1, new_height), Image.NEAREST)
+	# new_image = old_image.resize((new_width - 1, new_height), Image.BILINEAR)
+	# new_image = old_image.resize((new_width - 1, new_height), Image.BICUBIC)
 	
 	# new_image = new_image.convert('RGB')
 
@@ -398,8 +398,8 @@ frames_to_update_stats = 100
 output_dimensions = (
 	# (10, 10), # alphabet size
 	# (128, 128),
-	# (8, 8),
-	(30, 30),
+	(9, 8), # this is 8x8 without the '\n' char at the end
+	# (30, 30),
 	# (77, 31), # max 8x5 monitor size in ComputerCraft, used because 8x6 doesn't always work
 	# (77, 38), # max 8x6 monitor size in ComputerCraft
 	# (227, 85), # 1080p
