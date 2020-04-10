@@ -1,3 +1,6 @@
+# TEMPORARY:
+# cd I:/Users/welfj/Documents/Programming/Python/python-lua-dithering
+
 import os
 import time
 import sys
@@ -396,10 +399,8 @@ frames_to_update_stats = 100
 
 # (max_width, max_height)
 output_dimensions = (
-	# (10, 10), # alphabet size
-	# (128, 128),
-	(9, 8), # this is 8x8 without the '\n' char at the end
-	# (30, 30),
+	# (9, 8), # for single characters, this is 8x8 without the '\n' char at the end
+	(30, 30),
 	# (77, 31), # max 8x5 monitor size in ComputerCraft, used because 8x6 doesn't always work
 	# (77, 38), # max 8x6 monitor size in ComputerCraft
 	# (227, 85), # 1080p
@@ -417,17 +418,15 @@ t0 = time.time()
 
 for dimension in output_dimensions:
 	max_width, max_height = dimension
-
-	# get all filenames that will be processed
-	names = os.listdir('inputs')
-	for name in names:
+	for name in os.listdir('inputs'):
 		if name != '.empty': # '.empty' prevents the folder from being removed on GitHub
 			process_frames(name, max_width, max_height, frame_skipping)
-			# moving file to the temp inputs folder so it doesn't get processed again the next time
-			if move_processed_files:
-				os.rename('inputs/' + name, 'temp inputs/' + name)
-	
 	print()
+
+if move_processed_files:
+	for name in os.listdir('inputs'):
+		if name != '.empty':
+			os.rename('inputs/' + name, 'temp inputs/' + name)
 
 # print the time it took to run the program
 time_elapsed = time.time() - t0
